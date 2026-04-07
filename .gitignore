@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+dist/
+
+# Flutter
+.dart_tool/
+.build/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
