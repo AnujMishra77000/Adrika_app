@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/parent_models.dart';
 import '../state/parent_providers.dart';
 
 class ParentStudentsScreen extends ConsumerWidget {
   const ParentStudentsScreen({super.key});
+
+  Future<void> _refresh(WidgetRef ref, String studentId) async {
+    ref.invalidate(linkedStudentsProvider);
+    ref.invalidate(parentNoticesByStudentProvider(studentId));
+    ref.invalidate(parentHomeworkByStudentProvider(studentId));
+    ref.invalidate(parentAttendanceFeedByStudentProvider(studentId));
+    ref.invalidate(parentResultsByStudentProvider(studentId));
+    ref.invalidate(parentProgressByStudentProvider(studentId));
+
+    await Future.wait([
+      ref.read(parentNoticesByStudentProvider(studentId).future),
+      ref.read(parentHomeworkByStudentProvider(studentId).future),
+      ref.read(parentAttendanceFeedByStudentProvider(studentId).future),
+      ref.read(parentResultsByStudentProvider(studentId).future),
+      ref.read(parentProgressByStudentProvider(studentId).future),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,14 +35,7 @@ class ParentStudentsScreen extends ConsumerWidget {
           return const Center(child: Text('No linked students found.'));
         }
 
-        final selected =
-            ref.watch(selectedStudentIdProvider) ?? items.first.studentId;
-        if (ref.watch(selectedStudentIdProvider) == null) {
-          Future.microtask(() {
-            ref.read(selectedStudentIdProvider.notifier).state =
-                items.first.studentId;
-          });
-        }
+        final selectedId = ref.watch(activeStudentIdProvider) ?? items.first.studentId;
 
         final notices = ref.watch(noticesPreviewProvider);
         final homework = ref.watch(homeworkPreviewProvider);
@@ -32,65 +43,77 @@ class ParentStudentsScreen extends ConsumerWidget {
         final results = ref.watch(resultsPreviewProvider);
         final progress = ref.watch(progressPreviewProvider);
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text('Linked Students',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            ...items.map(
-              (student) => Card(
-                child: ListTile(
-                  title: Text(student.fullName),
-                  subtitle: Text(
-                      'Roll: ${student.rollNo} | Relation: ${student.relationType}'),
-                  trailing: student.studentId == selected
-                      ? const Icon(Icons.check_circle, color: Colors.green)
-                      : null,
-                  onTap: () {
-                    ref.read(selectedStudentIdProvider.notifier).state =
-                        student.studentId;
-                  },
+        return RefreshIndicator(
+          onRefresh: () => _refresh(ref, selectedId),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text('Linked Students', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              ...items.map(
+                (student) => Card(
+                  child: ListTile(
+                    title: Text(student.fullName),
+                    subtitle: Text(
+                      'Admission: ${student.admissionNo} | Roll: ${student.rollNo} | Relation: ${student.relationType}',
+                    ),
+                    trailing: student.studentId == selectedId
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : null,
+                    onTap: () {
+                      ref.read(selectedStudentIdProvider.notifier).state = student.studentId;
+                    },
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text('Student Snapshot',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _SectionCard<ParentNotice>(
-              title: 'Notices',
-              asyncValue: notices,
-              itemTitle: (item) => item.title,
-              itemSubtitle: (item) => item.bodyPreview,
-            ),
-            _SectionCard<ParentHomework>(
-              title: 'Homework',
-              asyncValue: homework,
-              itemTitle: (item) => item.title,
-              itemSubtitle: (item) => 'Due: ${item.dueDate} | ${item.status}',
-            ),
-            _SectionCard<ParentAttendance>(
-              title: 'Attendance',
-              asyncValue: attendance,
-              itemTitle: (item) => item.attendanceDate,
-              itemSubtitle: (item) => '${item.status} | ${item.source}',
-            ),
-            _SectionCard<ParentResult>(
-              title: 'Recent Results',
-              asyncValue: results,
-              itemTitle: (item) => 'Score ${item.score}/${item.totalMarks}',
-              itemSubtitle: (item) => 'Published: ${item.publishedAt ?? '-'}',
-            ),
-            _SectionCard<ParentProgress>(
-              title: 'Progress',
-              asyncValue: progress,
-              itemTitle: (item) => '${item.periodType} (${item.periodStart})',
-              itemSubtitle: (item) => item.metrics.entries
-                  .map((entry) => '${entry.key}: ${entry.value}')
-                  .join(' | '),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text('Student Snapshot', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              _SectionCard<ParentNotice>(
+                title: 'Notices',
+                actionLabel: 'View all',
+                onActionTap: () => context.push('/parent/students/$selectedId/notices'),
+                asyncValue: notices,
+                itemTitle: (item) => item.title,
+                itemSubtitle: (item) => item.bodyPreview,
+              ),
+              _SectionCard<ParentHomework>(
+                title: 'Homework',
+                actionLabel: 'View all',
+                onActionTap: () => context.push('/parent/students/$selectedId/homework'),
+                asyncValue: homework,
+                itemTitle: (item) => item.title,
+                itemSubtitle: (item) => 'Due: ${item.dueDate} | ${item.status}',
+              ),
+              _SectionCard<ParentAttendance>(
+                title: 'Attendance',
+                actionLabel: 'View all',
+                onActionTap: () => context.push('/parent/students/$selectedId/attendance'),
+                asyncValue: attendance,
+                itemTitle: (item) => item.attendanceDate,
+                itemSubtitle: (item) => '${item.status} | ${item.source}',
+              ),
+              _SectionCard<ParentResult>(
+                title: 'Recent Results',
+                actionLabel: 'View all',
+                onActionTap: () => context.push('/parent/students/$selectedId/results'),
+                asyncValue: results,
+                itemTitle: (item) => 'Score ${item.score}/${item.totalMarks}',
+                itemSubtitle: (item) => 'Published: ${item.publishedAt ?? '-'}',
+              ),
+              _SectionCard<ParentProgress>(
+                title: 'Progress',
+                actionLabel: 'View all',
+                onActionTap: () => context.push('/parent/students/$selectedId/progress'),
+                asyncValue: progress,
+                itemTitle: (item) => '${item.periodType} (${item.periodStart})',
+                itemSubtitle: (item) => item.metrics.entries
+                    .map((entry) => '${entry.key}: ${entry.value}')
+                    .join(' | '),
+              ),
+            ],
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -110,9 +133,13 @@ class _SectionCard<T> extends StatelessWidget {
     required this.asyncValue,
     required this.itemTitle,
     required this.itemSubtitle,
+    this.actionLabel,
+    this.onActionTap,
   });
 
   final String title;
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
   final AsyncValue<List<T>> asyncValue;
   final String Function(T item) itemTitle;
   final String Function(T item) itemSubtitle;
@@ -126,7 +153,14 @@ class _SectionCard<T> extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleSmall),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleSmall),
+                if (actionLabel != null && onActionTap != null)
+                  TextButton(onPressed: onActionTap, child: Text(actionLabel!)),
+              ],
+            ),
             const Divider(),
             asyncValue.when(
               data: (items) {

@@ -45,7 +45,10 @@ class _ParentShellScreenState extends ConsumerState<ParentShellScreen> {
         title: Text(_titles[_currentIndex]),
         actions: [
           IconButton(
-            onPressed: () => context.push('/parent/notifications'),
+            onPressed: () async {
+              await context.push('/parent/notifications');
+              ref.invalidate(parentNotificationsProvider);
+            },
             icon: Stack(
               clipBehavior: Clip.none,
               children: [

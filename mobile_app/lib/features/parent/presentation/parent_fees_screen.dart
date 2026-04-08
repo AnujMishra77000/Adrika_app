@@ -7,6 +7,18 @@ import '../state/parent_providers.dart';
 class ParentFeesScreen extends ConsumerWidget {
   const ParentFeesScreen({super.key});
 
+  Future<void> _refresh(WidgetRef ref, String studentId) async {
+    ref.invalidate(parentFeeInvoicesByStudentProvider(studentId));
+    ref.invalidate(parentPaymentsByStudentProvider(studentId));
+    ref.invalidate(parentDashboardProvider);
+
+    await Future.wait([
+      ref.read(parentFeeInvoicesByStudentProvider(studentId).future),
+      ref.read(parentPaymentsByStudentProvider(studentId).future),
+      ref.read(parentDashboardProvider.future),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final students = ref.watch(linkedStudentsProvider);
@@ -17,49 +29,48 @@ class ParentFeesScreen extends ConsumerWidget {
           return const Center(child: Text('No linked students found.'));
         }
 
-        final selected =
-            ref.watch(selectedStudentIdProvider) ?? items.first.studentId;
-        if (ref.watch(selectedStudentIdProvider) == null) {
-          Future.microtask(() {
-            ref.read(selectedStudentIdProvider.notifier).state =
-                items.first.studentId;
-          });
-        }
+        final selectedStudentId =
+            ref.watch(activeStudentIdProvider) ?? items.first.studentId;
 
-        final invoices = ref.watch(feeInvoicesProvider);
-        final payments = ref.watch(paymentsProvider);
+        final invoices =
+            ref.watch(parentFeeInvoicesByStudentProvider(selectedStudentId));
+        final payments = ref.watch(parentPaymentsByStudentProvider(selectedStudentId));
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            DropdownButtonFormField<String>(
-              key: ValueKey(selected),
-              initialValue: selected,
-              decoration: const InputDecoration(
-                labelText: 'Student',
-                border: OutlineInputBorder(),
+        return RefreshIndicator(
+          onRefresh: () => _refresh(ref, selectedStudentId),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              DropdownButtonFormField<String>(
+                key: ValueKey(selectedStudentId),
+                initialValue: selectedStudentId,
+                decoration: const InputDecoration(
+                  labelText: 'Student',
+                  border: OutlineInputBorder(),
+                ),
+                items: items
+                    .map(
+                      (student) => DropdownMenuItem<String>(
+                        value: student.studentId,
+                        child: Text('${student.fullName} (${student.rollNo})'),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) {
+                  if (value != null) {
+                    ref.read(selectedStudentIdProvider.notifier).state = value;
+                  }
+                },
               ),
-              items: items
-                  .map(
-                    (student) => DropdownMenuItem<String>(
-                      value: student.studentId,
-                      child: Text(student.fullName),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(selectedStudentIdProvider.notifier).state = value;
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-            _FeeSummaryCard(asyncInvoices: invoices),
-            const SizedBox(height: 12),
-            _InvoiceList(asyncInvoices: invoices),
-            const SizedBox(height: 12),
-            _PaymentList(asyncPayments: payments),
-          ],
+              const SizedBox(height: 12),
+              _FeeSummaryCard(asyncInvoices: invoices, asyncPayments: payments),
+              const SizedBox(height: 12),
+              _InvoiceList(asyncInvoices: invoices),
+              const SizedBox(height: 12),
+              _PaymentList(asyncPayments: payments),
+            ],
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -74,9 +85,13 @@ class ParentFeesScreen extends ConsumerWidget {
 }
 
 class _FeeSummaryCard extends StatelessWidget {
-  const _FeeSummaryCard({required this.asyncInvoices});
+  const _FeeSummaryCard({
+    required this.asyncInvoices,
+    required this.asyncPayments,
+  });
 
   final AsyncValue<List<ParentFeeInvoice>> asyncInvoices;
+  final AsyncValue<List<ParentPayment>> asyncPayments;
 
   @override
   Widget build(BuildContext context) {
@@ -84,11 +99,20 @@ class _FeeSummaryCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: asyncInvoices.when(
-          data: (items) {
-            final pendingAmount = items
+          data: (invoices) {
+            final pendingAmount = invoices
                 .where((invoice) =>
                     invoice.status == 'pending' || invoice.status == 'overdue')
                 .fold<double>(0, (sum, invoice) => sum + invoice.amount);
+
+            final paidAmount = invoices
+                .where((invoice) => invoice.status == 'paid')
+                .fold<double>(0, (sum, invoice) => sum + invoice.amount);
+
+            final paymentsCount = asyncPayments.maybeWhen(
+              data: (items) => items.length,
+              orElse: () => 0,
+            );
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,8 +120,10 @@ class _FeeSummaryCard extends StatelessWidget {
                 Text('Fee Summary',
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                Text('Total Invoices: ${items.length}'),
+                Text('Total Invoices: ${invoices.length}'),
+                Text('Paid Amount: ₹${paidAmount.toStringAsFixed(2)}'),
                 Text('Pending Amount: ₹${pendingAmount.toStringAsFixed(2)}'),
+                Text('Payments Recorded: $paymentsCount'),
               ],
             );
           },
@@ -138,12 +164,18 @@ class _InvoiceList extends StatelessWidget {
                       .map(
                         (invoice) => ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text(
-                              '${invoice.invoiceNo} • ${invoice.periodLabel}'),
+                          title: Text('${invoice.invoiceNo} • ${invoice.periodLabel}'),
                           subtitle: Text(
-                              'Due: ${invoice.dueDate} • Status: ${invoice.status}'),
-                          trailing:
+                            'Due: ${invoice.dueDate} • Status: ${invoice.status}',
+                          ),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
                               Text('₹${invoice.amount.toStringAsFixed(2)}'),
+                              Text(_formatDate(invoice.paidAt)),
+                            ],
+                          ),
                         ),
                       )
                       .toList(growable: false),
@@ -188,11 +220,11 @@ class _PaymentList extends StatelessWidget {
                       .map(
                         (payment) => ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title:
-                              Text('${payment.provider} • ${payment.status}'),
-                          subtitle: Text('Ref: ${payment.externalRef ?? '-'}'),
-                          trailing:
-                              Text('₹${payment.amount.toStringAsFixed(2)}'),
+                          title: Text('${payment.provider} • ${payment.status}'),
+                          subtitle: Text(
+                            'Ref: ${payment.externalRef ?? '-'} • ${_formatDate(payment.paidAt)}',
+                          ),
+                          trailing: Text('₹${payment.amount.toStringAsFixed(2)}'),
                         ),
                       )
                       .toList(growable: false),
@@ -209,4 +241,11 @@ class _PaymentList extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatDate(String? value) {
+  if (value == null || value.isEmpty) {
+    return '-';
+  }
+  return value.split('T').first;
 }

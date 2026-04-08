@@ -11,7 +11,7 @@ class AdrApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'ADR Parent App',
+      title: 'ADR Mobile App',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: ThemeData(

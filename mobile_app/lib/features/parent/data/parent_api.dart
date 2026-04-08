@@ -18,8 +18,7 @@ class ParentApi {
     return ParentProfile.fromJson(response);
   }
 
-  Future<List<LinkedStudent>> fetchStudents(
-      {required String accessToken}) async {
+  Future<List<LinkedStudent>> fetchStudents({required String accessToken}) async {
     final response =
         await _client.getMap('/parents/me/students', accessToken: accessToken);
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
@@ -28,8 +27,10 @@ class ParentApi {
         .toList(growable: false);
   }
 
-  Future<ParentDashboard> fetchDashboard(
-      {required String accessToken, required String studentId}) async {
+  Future<ParentDashboard> fetchDashboard({
+    required String accessToken,
+    required String studentId,
+  }) async {
     final response = await _client.getMap(
       '/parents/me/dashboard',
       accessToken: accessToken,
@@ -41,12 +42,13 @@ class ParentApi {
   Future<List<ParentNotice>> fetchNotices({
     required String accessToken,
     required String studentId,
-    int limit = 5,
+    int limit = 20,
+    int offset = 0,
   }) async {
     final response = await _client.getMap(
       '/parents/me/students/$studentId/notices',
       accessToken: accessToken,
-      queryParameters: {'limit': limit, 'offset': 0},
+      queryParameters: {'limit': limit, 'offset': offset},
     );
 
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
@@ -55,15 +57,39 @@ class ParentApi {
         .toList(growable: false);
   }
 
+  Future<ParentNoticeDetail> fetchNoticeDetail({
+    required String accessToken,
+    required String studentId,
+    required String noticeId,
+  }) async {
+    final response = await _client.getMap(
+      '/parents/me/students/$studentId/notices/$noticeId',
+      accessToken: accessToken,
+    );
+    return ParentNoticeDetail.fromJson(response);
+  }
+
+  Future<void> markNoticeRead({
+    required String accessToken,
+    required String studentId,
+    required String noticeId,
+  }) async {
+    await _client.postMap(
+      '/parents/me/students/$studentId/notices/$noticeId/read',
+      accessToken: accessToken,
+    );
+  }
+
   Future<List<ParentHomework>> fetchHomework({
     required String accessToken,
     required String studentId,
-    int limit = 5,
+    int limit = 20,
+    int offset = 0,
   }) async {
     final response = await _client.getMap(
       '/parents/me/students/$studentId/homework',
       accessToken: accessToken,
-      queryParameters: {'limit': limit, 'offset': 0},
+      queryParameters: {'limit': limit, 'offset': offset},
     );
 
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
@@ -72,32 +98,46 @@ class ParentApi {
         .toList(growable: false);
   }
 
-  Future<List<ParentAttendance>> fetchAttendance({
+  Future<ParentAttendanceFeed> fetchAttendanceFeed({
     required String accessToken,
     required String studentId,
-    int limit = 5,
+    int limit = 30,
+    int offset = 0,
   }) async {
     final response = await _client.getMap(
       '/parents/me/students/$studentId/attendance',
       accessToken: accessToken,
-      queryParameters: {'limit': limit, 'offset': 0},
+      queryParameters: {'limit': limit, 'offset': offset},
     );
 
-    final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
-    return raw
-        .map((item) => ParentAttendance.fromJson(item as Map<String, dynamic>))
-        .toList(growable: false);
+    return ParentAttendanceFeed.fromJson(response);
+  }
+
+  Future<List<ParentAttendance>> fetchAttendance({
+    required String accessToken,
+    required String studentId,
+    int limit = 30,
+    int offset = 0,
+  }) async {
+    final feed = await fetchAttendanceFeed(
+      accessToken: accessToken,
+      studentId: studentId,
+      limit: limit,
+      offset: offset,
+    );
+    return feed.items;
   }
 
   Future<List<ParentResult>> fetchResults({
     required String accessToken,
     required String studentId,
-    int limit = 5,
+    int limit = 20,
+    int offset = 0,
   }) async {
     final response = await _client.getMap(
       '/parents/me/students/$studentId/results',
       accessToken: accessToken,
-      queryParameters: {'limit': limit, 'offset': 0},
+      queryParameters: {'limit': limit, 'offset': offset},
     );
 
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
@@ -109,7 +149,7 @@ class ParentApi {
   Future<List<ParentProgress>> fetchProgress({
     required String accessToken,
     required String studentId,
-    int limit = 6,
+    int limit = 12,
   }) async {
     final response = await _client.getMap(
       '/parents/me/students/$studentId/progress',
@@ -126,12 +166,19 @@ class ParentApi {
   Future<List<ParentFeeInvoice>> fetchFeeInvoices({
     required String accessToken,
     required String studentId,
+    String? status,
     int limit = 50,
+    int offset = 0,
   }) async {
+    final query = <String, dynamic>{'limit': limit, 'offset': offset};
+    if (status != null && status.isNotEmpty) {
+      query['status'] = status;
+    }
+
     final response = await _client.getMap(
       '/parents/me/students/$studentId/fees',
       accessToken: accessToken,
-      queryParameters: {'limit': limit, 'offset': 0},
+      queryParameters: query,
     );
 
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
@@ -143,12 +190,19 @@ class ParentApi {
   Future<List<ParentPayment>> fetchPayments({
     required String accessToken,
     required String studentId,
+    String? status,
     int limit = 50,
+    int offset = 0,
   }) async {
+    final query = <String, dynamic>{'limit': limit, 'offset': offset};
+    if (status != null && status.isNotEmpty) {
+      query['status'] = status;
+    }
+
     final response = await _client.getMap(
       '/parents/me/students/$studentId/payments',
       accessToken: accessToken,
-      queryParameters: {'limit': limit, 'offset': 0},
+      queryParameters: query,
     );
 
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
@@ -157,10 +211,9 @@ class ParentApi {
         .toList(growable: false);
   }
 
-  Future<ParentPreference> fetchPreferences(
-      {required String accessToken}) async {
-    final response = await _client.getMap('/parents/me/preferences',
-        accessToken: accessToken);
+  Future<ParentPreference> fetchPreferences({required String accessToken}) async {
+    final response =
+        await _client.getMap('/parents/me/preferences', accessToken: accessToken);
     return ParentPreference.fromJson(response);
   }
 
@@ -178,18 +231,24 @@ class ParentApi {
 
   Future<ParentNotificationList> fetchNotifications({
     required String accessToken,
+    bool? isRead,
     int limit = 30,
+    int offset = 0,
   }) async {
+    final query = <String, dynamic>{'limit': limit, 'offset': offset};
+    if (isRead != null) {
+      query['is_read'] = isRead;
+    }
+
     final response = await _client.getMap(
       '/parents/me/notifications',
       accessToken: accessToken,
-      queryParameters: {'limit': limit, 'offset': 0},
+      queryParameters: query,
     );
 
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
     final notifications = raw
-        .map(
-            (item) => ParentNotification.fromJson(item as Map<String, dynamic>))
+        .map((item) => ParentNotification.fromJson(item as Map<String, dynamic>))
         .toList(growable: false);
 
     return ParentNotificationList(
@@ -198,8 +257,20 @@ class ParentApi {
     );
   }
 
+  Future<void> markNotificationRead({
+    required String accessToken,
+    required String notificationId,
+  }) async {
+    await _client.postMap(
+      '/parents/me/notifications/$notificationId/read',
+      accessToken: accessToken,
+    );
+  }
+
   Future<void> markAllNotificationsRead({required String accessToken}) async {
-    await _client.postMap('/parents/me/notifications/read-all',
-        accessToken: accessToken);
+    await _client.postMap(
+      '/parents/me/notifications/read-all',
+      accessToken: accessToken,
+    );
   }
 }

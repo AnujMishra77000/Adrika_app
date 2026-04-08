@@ -1,17 +1,23 @@
 # ADR Mobile App (Flutter)
 
-Phase-1 foundation scaffold for student and teacher app.
+Multi-role mobile app for ADR platform.
 
-## Planned stack
+## Supported roles in this build
 
-- Flutter
-- Riverpod
-- Dio
-- go_router
-- freezed/json_serializable
+- Student
+- Teacher
+- Parent (phase-4 flow)
 
-## Next steps
+## Run locally
 
-- auth flow + token storage
-- student dashboard + notices/homework/attendance screens
-- teacher module enablement in Phase 3
+1. Start backend first on `http://localhost:8000`
+2. Install packages:
+   - `flutter pub get`
+3. Run on Android emulator:
+   - `flutter run -d <android_device_id>`
+4. Run on iOS simulator:
+   - `flutter run -d <ios_simulator_id> --dart-define=API_BASE_URL=http://localhost:8000/api/v1`
+5. Run on Chrome:
+   - `flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8000/api/v1`
+
+For physical phones, pass your Mac LAN URL via `--dart-define=API_BASE_URL=...`.

@@ -22,7 +22,7 @@ class AuthApi {
         'identifier': identifier,
         'password': password,
         'device': {
-          'device_id': 'parent-mobile-device',
+          'device_id': 'adr-mobile-device',
           'platform': 'android',
           'app_version': '0.1.0',
         },

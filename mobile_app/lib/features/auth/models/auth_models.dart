@@ -35,7 +35,7 @@ class AuthUser {
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     final rawRoles = (json['roles'] as List<dynamic>? ?? <dynamic>[])
-        .map((role) => role.toString())
+        .map((role) => role.toString().toLowerCase())
         .toList(growable: false);
 
     return AuthUser(

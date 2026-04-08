@@ -16,6 +16,9 @@ Phase 2 admin console for student-side operational control.
 - `/login`
 - `/admin`
 - `/admin/students`
+- `/admin/parents`
+- `/admin/fees`
+- `/admin/payments`
 - `/admin/notices`
 - `/admin/homework`
 - `/admin/attendance`

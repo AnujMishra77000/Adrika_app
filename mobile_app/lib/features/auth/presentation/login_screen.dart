@@ -13,8 +13,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _identifierController =
-      TextEditingController(text: 'parent@test.local');
-  final _passwordController = TextEditingController(text: 'Parent@123');
+      TextEditingController(text: 'student@adr.local');
+  final _passwordController = TextEditingController(text: 'Student@123');
 
   @override
   void dispose() {
@@ -37,13 +37,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    if (success && auth.roles.contains('parent')) {
-      context.go('/parent');
-      return;
-    }
-
     if (success) {
-      context.go('/unsupported');
+      context.go('/boot');
       return;
     }
 
@@ -67,12 +62,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'ADR Parent Login',
+                    'ADR Mobile Login',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Phase 4 parent app screens are enabled in this build.',
+                    'Student and Teacher mobile flows are enabled. Parent flow is also available in this build.',
                   ),
                   const SizedBox(height: 24),
                   TextField(

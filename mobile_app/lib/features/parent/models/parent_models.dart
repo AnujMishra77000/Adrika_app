@@ -15,6 +15,16 @@ bool _toBool(dynamic value, {bool fallback = false}) {
   return fallback;
 }
 
+Map<String, dynamic> _toMap(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map((key, item) => MapEntry(key.toString(), item));
+  }
+  return <String, dynamic>{};
+}
+
 class ParentProfile {
   final String parentId;
   final String userId;
@@ -108,6 +118,7 @@ class ParentNotice {
   final String bodyPreview;
   final String? publishAt;
   final bool isRead;
+  final int priority;
 
   const ParentNotice({
     required this.id,
@@ -115,6 +126,7 @@ class ParentNotice {
     required this.bodyPreview,
     required this.publishAt,
     required this.isRead,
+    required this.priority,
   });
 
   factory ParentNotice.fromJson(Map<String, dynamic> json) {
@@ -124,6 +136,36 @@ class ParentNotice {
       bodyPreview: json['body_preview']?.toString() ?? '',
       publishAt: json['publish_at']?.toString(),
       isRead: _toBool(json['is_read']),
+      priority: _toNum(json['priority']).toInt(),
+    );
+  }
+}
+
+class ParentNoticeDetail {
+  final String id;
+  final String title;
+  final String body;
+  final String? publishAt;
+  final bool isRead;
+  final int priority;
+
+  const ParentNoticeDetail({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.publishAt,
+    required this.isRead,
+    required this.priority,
+  });
+
+  factory ParentNoticeDetail.fromJson(Map<String, dynamic> json) {
+    return ParentNoticeDetail(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      body: json['body']?.toString() ?? '',
+      publishAt: json['publish_at']?.toString(),
+      isRead: _toBool(json['is_read']),
+      priority: _toNum(json['priority']).toInt(),
     );
   }
 }
@@ -177,6 +219,46 @@ class ParentAttendance {
   }
 }
 
+class ParentAttendanceSummary {
+  final int totalDays;
+  final int presentDays;
+  final int absentDays;
+  final double attendancePercentage;
+
+  const ParentAttendanceSummary({
+    required this.totalDays,
+    required this.presentDays,
+    required this.absentDays,
+    required this.attendancePercentage,
+  });
+
+  factory ParentAttendanceSummary.fromJson(Map<String, dynamic> json) {
+    return ParentAttendanceSummary(
+      totalDays: _toNum(json['total_days']).toInt(),
+      presentDays: _toNum(json['present_days']).toInt(),
+      absentDays: _toNum(json['absent_days']).toInt(),
+      attendancePercentage: _toNum(json['attendance_percentage']).toDouble(),
+    );
+  }
+}
+
+class ParentAttendanceFeed {
+  final List<ParentAttendance> items;
+  final ParentAttendanceSummary summary;
+
+  const ParentAttendanceFeed({required this.items, required this.summary});
+
+  factory ParentAttendanceFeed.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'] as List<dynamic>? ?? <dynamic>[];
+    return ParentAttendanceFeed(
+      items: rawItems
+          .map((item) => ParentAttendance.fromJson(_toMap(item)))
+          .toList(growable: false),
+      summary: ParentAttendanceSummary.fromJson(_toMap(json['summary'])),
+    );
+  }
+}
+
 class ParentResult {
   final String id;
   final String assessmentId;
@@ -218,8 +300,7 @@ class ParentProgress {
   });
 
   factory ParentProgress.fromJson(Map<String, dynamic> json) {
-    final metrics =
-        json['metrics'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    final metrics = _toMap(json['metrics']);
 
     return ParentProgress(
       periodType: json['period_type']?.toString() ?? '',

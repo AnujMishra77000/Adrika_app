@@ -7,6 +7,20 @@ import '../state/parent_providers.dart';
 class ParentDashboardScreen extends ConsumerWidget {
   const ParentDashboardScreen({super.key});
 
+  Future<void> _refresh(WidgetRef ref, String studentId) async {
+    ref.invalidate(parentDashboardProvider);
+    ref.invalidate(parentNotificationsProvider);
+    ref.invalidate(parentHomeworkByStudentProvider(studentId));
+    ref.invalidate(parentFeeInvoicesByStudentProvider(studentId));
+
+    await Future.wait([
+      ref.read(parentDashboardProvider.future),
+      ref.read(parentNotificationsProvider.future),
+      ref.read(parentHomeworkByStudentProvider(studentId).future),
+      ref.read(parentFeeInvoicesByStudentProvider(studentId).future),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final students = ref.watch(linkedStudentsProvider);
@@ -15,39 +29,38 @@ class ParentDashboardScreen extends ConsumerWidget {
       data: (items) {
         if (items.isEmpty) {
           return const _EmptyState(
-              message: 'No linked students found for this parent account.');
+            message: 'No linked students found for this parent account.',
+          );
         }
 
-        final selected = ref.watch(selectedStudentIdProvider);
-        final activeStudentId = selected ?? items.first.studentId;
-
-        if (selected == null) {
-          Future.microtask(() {
-            ref.read(selectedStudentIdProvider.notifier).state =
-                items.first.studentId;
-          });
-        }
+        final selectedStudentId =
+            ref.watch(activeStudentIdProvider) ?? items.first.studentId;
 
         final dashboard = ref.watch(parentDashboardProvider);
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _StudentSelector(
-              students: items,
-              selectedStudentId: activeStudentId,
-            ),
-            const SizedBox(height: 12),
-            dashboard.when(
-              data: (data) => _DashboardMetrics(data: data),
-              loading: () => const Center(
+        return RefreshIndicator(
+          onRefresh: () => _refresh(ref, selectedStudentId),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              _StudentSelector(
+                students: items,
+                selectedStudentId: selectedStudentId,
+              ),
+              const SizedBox(height: 12),
+              dashboard.when(
+                data: (data) => _DashboardMetrics(data: data),
+                loading: () => const Center(
                   child: Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(),
-              )),
-              error: (error, _) => _ErrorState(message: error.toString()),
-            ),
-          ],
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (error, _) => _ErrorState(message: error.toString()),
+              ),
+            ],
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -67,6 +80,8 @@ class _StudentSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final activeStudent = ref.watch(activeLinkedStudentProvider);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -95,6 +110,13 @@ class _StudentSelector extends ConsumerWidget {
                 }
               },
             ),
+            if (activeStudent != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Relation: ${activeStudent.relationType} | Admission: ${activeStudent.admissionNo}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
       ),

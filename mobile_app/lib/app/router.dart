@@ -4,8 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/state/auth_controller.dart';
+import '../features/parent/presentation/parent_attendance_screen.dart';
+import '../features/parent/presentation/parent_homework_screen.dart';
 import '../features/parent/presentation/parent_notifications_screen.dart';
+import '../features/parent/presentation/parent_notices_screen.dart';
+import '../features/parent/presentation/parent_progress_screen.dart';
+import '../features/parent/presentation/parent_results_screen.dart';
 import '../features/parent/presentation/parent_shell_screen.dart';
+import '../features/student/presentation/student_shell_screen.dart';
+import '../features/teacher/presentation/teacher_shell_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
@@ -22,12 +29,55 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
+        path: '/student',
+        builder: (context, state) => const StudentShellScreen(),
+      ),
+      GoRoute(
+        path: '/teacher',
+        builder: (context, state) => const TeacherShellScreen(),
+      ),
+      GoRoute(
         path: '/parent',
         builder: (context, state) => const ParentShellScreen(),
         routes: [
           GoRoute(
             path: 'notifications',
             builder: (context, state) => const ParentNotificationsScreen(),
+          ),
+          GoRoute(
+            path: 'students/:studentId/notices',
+            builder: (context, state) {
+              final studentId = state.pathParameters['studentId'] ?? '';
+              return ParentNoticesScreen(studentId: studentId);
+            },
+          ),
+          GoRoute(
+            path: 'students/:studentId/homework',
+            builder: (context, state) {
+              final studentId = state.pathParameters['studentId'] ?? '';
+              return ParentHomeworkScreen(studentId: studentId);
+            },
+          ),
+          GoRoute(
+            path: 'students/:studentId/attendance',
+            builder: (context, state) {
+              final studentId = state.pathParameters['studentId'] ?? '';
+              return ParentAttendanceScreen(studentId: studentId);
+            },
+          ),
+          GoRoute(
+            path: 'students/:studentId/results',
+            builder: (context, state) {
+              final studentId = state.pathParameters['studentId'] ?? '';
+              return ParentResultsScreen(studentId: studentId);
+            },
+          ),
+          GoRoute(
+            path: 'students/:studentId/progress',
+            builder: (context, state) {
+              final studentId = state.pathParameters['studentId'] ?? '';
+              return ParentProgressScreen(studentId: studentId);
+            },
           ),
         ],
       ),
@@ -39,7 +89,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (_, state) {
       final isBootstrapping = authState.isBootstrapping;
       final isLoggedIn = authState.isAuthenticated;
-      final isParent = authState.roles.contains('parent');
+      final homeRoute = _homeRouteForRoles(authState.roles);
       final path = state.matchedLocation;
 
       if (isBootstrapping) {
@@ -50,22 +100,39 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return path == '/login' ? null : '/login';
       }
 
-      if (!isParent) {
+      if (homeRoute == null) {
         return path == '/unsupported' ? null : '/unsupported';
       }
 
       if (path == '/boot' || path == '/login' || path == '/unsupported') {
-        return '/parent';
+        return homeRoute;
       }
 
-      if (path.startsWith('/parent')) {
+      if (_belongsToHome(path, homeRoute)) {
         return null;
       }
 
-      return '/parent';
+      return homeRoute;
     },
   );
 });
+
+String? _homeRouteForRoles(List<String> roles) {
+  if (roles.contains('student')) {
+    return '/student';
+  }
+  if (roles.contains('teacher')) {
+    return '/teacher';
+  }
+  if (roles.contains('parent')) {
+    return '/parent';
+  }
+  return null;
+}
+
+bool _belongsToHome(String path, String homeRoute) {
+  return path == homeRoute || path.startsWith('$homeRoute/');
+}
 
 class _BootScreen extends StatelessWidget {
   const _BootScreen();
@@ -94,8 +161,7 @@ class _UnsupportedRoleScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'This mobile app build currently includes parent screens. '
-                'Please use a parent account for this phase.',
+                'This mobile build currently supports student, teacher, and parent roles only.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),

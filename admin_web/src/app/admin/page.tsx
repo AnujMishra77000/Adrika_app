@@ -1,51 +1,90 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { apiRequest } from '@/lib/api';
+import { apiRequest } from "@/lib/api";
+
+type OverviewStats = {
+  students: number;
+  parents: number;
+  notices: number;
+  homework: number;
+  doubts: number;
+  results: number;
+  banners: number;
+  fee_invoices: number;
+  payments: number;
+};
+
+const initialStats: OverviewStats = {
+  students: 0,
+  parents: 0,
+  notices: 0,
+  homework: 0,
+  doubts: 0,
+  results: 0,
+  banners: 0,
+  fee_invoices: 0,
+  payments: 0,
+};
+
+const cards: Array<{ key: keyof OverviewStats; label: string }> = [
+  { key: "students", label: "Students" },
+  { key: "parents", label: "Parents" },
+  { key: "notices", label: "Notices" },
+  { key: "homework", label: "Homework" },
+  { key: "doubts", label: "Doubts" },
+  { key: "results", label: "Results" },
+  { key: "banners", label: "Banners" },
+  { key: "fee_invoices", label: "Fee Invoices" },
+  { key: "payments", label: "Payments" },
+];
 
 export default function AdminOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    students: 0,
-    notices: 0,
-    homework: 0,
-    doubts: 0,
-    results: 0,
-    banners: 0,
-  });
+  const [stats, setStats] = useState<OverviewStats>(initialStats);
 
   useEffect(() => {
     let mounted = true;
 
     async function load() {
       try {
-        const [students, notices, homework, doubts, results, banners] = await Promise.all([
-          apiRequest<{ meta: { total: number } }>('/api/v1/admin/students?limit=1&offset=0'),
-          apiRequest<{ meta: { total: number } }>('/api/v1/admin/notices?limit=1&offset=0'),
-          apiRequest<{ meta: { total: number } }>('/api/v1/admin/homework?limit=1&offset=0'),
-          apiRequest<{ meta: { total: number } }>('/api/v1/admin/doubts?limit=1&offset=0'),
-          apiRequest<{ meta: { total: number } }>('/api/v1/admin/results?limit=1&offset=0'),
-          apiRequest<{ meta: { total: number } }>('/api/v1/admin/banners?limit=1&offset=0'),
-        ]);
+        const [students, parents, notices, homework, doubts, results, banners, feeInvoices, payments] =
+          await Promise.all([
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/students?limit=1&offset=0"),
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/parents?limit=1&offset=0"),
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/notices?limit=1&offset=0"),
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/homework?limit=1&offset=0"),
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/doubts?limit=1&offset=0"),
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/results?limit=1&offset=0"),
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/banners?limit=1&offset=0"),
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/fee-invoices?limit=1&offset=0"),
+            apiRequest<{ meta: { total: number } }>("/api/v1/admin/payments?limit=1&offset=0"),
+          ]);
 
-        if (mounted) {
-          setStats({
-            students: students.meta.total,
-            notices: notices.meta.total,
-            homework: homework.meta.total,
-            doubts: doubts.meta.total,
-            results: results.meta.total,
-            banners: banners.meta.total,
-          });
-          setLoading(false);
+        if (!mounted) {
+          return;
         }
+
+        setStats({
+          students: students.meta.total,
+          parents: parents.meta.total,
+          notices: notices.meta.total,
+          homework: homework.meta.total,
+          doubts: doubts.meta.total,
+          results: results.meta.total,
+          banners: banners.meta.total,
+          fee_invoices: feeInvoices.meta.total,
+          payments: payments.meta.total,
+        });
+        setLoading(false);
       } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load overview');
-          setLoading(false);
+        if (!mounted) {
+          return;
         }
+        setError(err instanceof Error ? err.message : "Failed to load overview");
+        setLoading(false);
       }
     }
 
@@ -55,20 +94,25 @@ export default function AdminOverviewPage() {
     };
   }, []);
 
-  if (loading) return <p>Loading overview...</p>;
-  if (error) return <p style={{ color: '#dc2626' }}>{error}</p>;
+  if (loading) {
+    return <p>Loading overview...</p>;
+  }
+
+  if (error) {
+    return <p style={{ color: "#dc2626" }}>{error}</p>;
+  }
 
   return (
     <section>
       <h1 style={{ marginTop: 0 }}>Overview</h1>
       <p className="muted">Current operational counts from admin APIs.</p>
       <div className="grid" style={{ marginTop: 12 }}>
-        <div className="card"><strong>Students</strong><div>{stats.students}</div></div>
-        <div className="card"><strong>Notices</strong><div>{stats.notices}</div></div>
-        <div className="card"><strong>Homework</strong><div>{stats.homework}</div></div>
-        <div className="card"><strong>Doubts</strong><div>{stats.doubts}</div></div>
-        <div className="card"><strong>Results</strong><div>{stats.results}</div></div>
-        <div className="card"><strong>Banners</strong><div>{stats.banners}</div></div>
+        {cards.map((card) => (
+          <div className="card" key={card.key}>
+            <strong>{card.label}</strong>
+            <div>{stats[card.key]}</div>
+          </div>
+        ))}
       </div>
     </section>
   );
