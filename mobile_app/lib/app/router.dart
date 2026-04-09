@@ -11,11 +11,17 @@ import '../features/parent/presentation/parent_notices_screen.dart';
 import '../features/parent/presentation/parent_progress_screen.dart';
 import '../features/parent/presentation/parent_results_screen.dart';
 import '../features/parent/presentation/parent_shell_screen.dart';
+import '../features/student/presentation/student_feature_screens.dart';
 import '../features/student/presentation/student_shell_screen.dart';
 import '../features/teacher/presentation/teacher_shell_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authControllerProvider);
+  final isBootstrapping = ref
+      .watch(authControllerProvider.select((state) => state.isBootstrapping));
+  final isLoggedIn = ref
+      .watch(authControllerProvider.select((state) => state.isAuthenticated));
+  final roles =
+      ref.watch(authControllerProvider.select((state) => state.roles));
 
   return GoRouter(
     initialLocation: '/boot',
@@ -26,11 +32,112 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) =>
+            const LoginScreen(mode: AuthEntryMode.menu),
+      ),
+      GoRoute(
+        path: '/login/student',
+        builder: (context, state) =>
+            const LoginScreen(mode: AuthEntryMode.studentLogin),
+      ),
+      GoRoute(
+        path: '/login/teacher',
+        builder: (context, state) =>
+            const LoginScreen(mode: AuthEntryMode.teacherLogin),
+      ),
+      GoRoute(
+        path: '/register/student',
+        builder: (context, state) =>
+            const LoginScreen(mode: AuthEntryMode.studentRegister),
+      ),
+      GoRoute(
+        path: '/register/teacher',
+        builder: (context, state) =>
+            const LoginScreen(mode: AuthEntryMode.teacherRegister),
       ),
       GoRoute(
         path: '/student',
         builder: (context, state) => const StudentShellScreen(),
+      ),
+      GoRoute(
+        path: '/student/notifications',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentNotificationsScreen()),
+      ),
+      GoRoute(
+        path: '/student/notifications/:notificationId',
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['notificationId'] ?? '';
+          return _studentTransitionPage(
+            state,
+            StudentNotificationDetailScreen(notificationId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/student/announcements/:announcementId',
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['announcementId'] ?? '';
+          return _studentTransitionPage(
+            state,
+            StudentAnnouncementDetailScreen(announcementId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/student/lectures/today',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentTodayLecturesScreen()),
+      ),
+      GoRoute(
+        path: '/student/lectures/upcoming',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentUpcomingLectureScreen()),
+      ),
+      GoRoute(
+        path: '/student/practice-tests',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentPracticeTestScreen()),
+      ),
+      GoRoute(
+        path: '/student/progress',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentProgressScreen()),
+      ),
+      GoRoute(
+        path: '/student/notes',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentNotesScreen()),
+      ),
+      GoRoute(
+        path: '/student/online-tests',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentOnlineTestScreen()),
+      ),
+      GoRoute(
+        path: '/student/chat',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentChatScreen()),
+      ),
+      GoRoute(
+        path: '/student/raise-doubt',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentRaiseDoubtScreen()),
+      ),
+      GoRoute(
+        path: '/student/attendance',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentAttendanceScreen()),
+      ),
+      GoRoute(
+        path: '/student/holidays',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentHolidayScreen()),
+      ),
+      GoRoute(
+        path: '/student/homework',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentHomeworkHubScreen()),
       ),
       GoRoute(
         path: '/teacher',
@@ -87,9 +194,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     redirect: (_, state) {
-      final isBootstrapping = authState.isBootstrapping;
-      final isLoggedIn = authState.isAuthenticated;
-      final homeRoute = _homeRouteForRoles(authState.roles);
+      final homeRoute = _homeRouteForRoles(roles);
       final path = state.matchedLocation;
 
       if (isBootstrapping) {
@@ -97,14 +202,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (!isLoggedIn) {
-        return path == '/login' ? null : '/login';
+        final isAuthPath = path == '/login' ||
+            path.startsWith('/login/') ||
+            path.startsWith('/register/');
+        return isAuthPath ? null : '/login';
       }
 
       if (homeRoute == null) {
         return path == '/unsupported' ? null : '/unsupported';
       }
 
-      if (path == '/boot' || path == '/login' || path == '/unsupported') {
+      if (path == '/boot' ||
+          path == '/login' ||
+          path.startsWith('/login/') ||
+          path.startsWith('/register/') ||
+          path == '/unsupported') {
         return homeRoute;
       }
 
@@ -116,6 +228,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
   );
 });
+
+CustomTransitionPage<void> _studentTransitionPage(
+  GoRouterState state,
+  Widget child,
+) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 260),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
+    transitionsBuilder: (context, animation, secondaryAnimation, widget) {
+      final slide = Tween<Offset>(
+        begin: const Offset(0.03, 0.0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+
+      final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+
+      return FadeTransition(
+        opacity: fade,
+        child: SlideTransition(position: slide, child: widget),
+      );
+    },
+  );
+}
 
 String? _homeRouteForRoles(List<String> roles) {
   if (roles.contains('student')) {

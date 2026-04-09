@@ -58,11 +58,40 @@ class StudentApi {
         .toList(growable: false);
   }
 
-  Future<Map<String, dynamic>> fetchAttendanceSummary(
-      {required String accessToken}) {
+  Future<Map<String, dynamic>> fetchAttendanceSummary({
+    required String accessToken,
+  }) {
     return _client.getMap(
       '/students/me/attendance/summary',
       accessToken: accessToken,
     );
+  }
+
+  Future<List<StudentNotificationItem>> fetchNotifications({
+    required String accessToken,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _client.getMap(
+        '/students/me/notifications',
+        accessToken: accessToken,
+        queryParameters: {'limit': limit, 'offset': 0},
+      );
+
+      final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
+      return raw
+          .map(
+            (item) =>
+                StudentNotificationItem.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(growable: false);
+    } catch (_) {
+      // Fallback keeps UI functional when notifications endpoint is introduced later.
+      final notices =
+          await fetchNotices(accessToken: accessToken, limit: limit);
+      return notices
+          .map(StudentNotificationItem.fromNotice)
+          .toList(growable: false);
+    }
   }
 }

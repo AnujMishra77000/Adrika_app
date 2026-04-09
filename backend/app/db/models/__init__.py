@@ -25,6 +25,7 @@ from app.db.models.doubt import Doubt, DoubtMessage
 from app.db.models.homework import Homework, HomeworkTarget
 from app.db.models.notification import Notification, NotificationDelivery
 from app.db.models.parent import ParentCommunicationPreference, ParentProfile, ParentStudentLink
+from app.db.models.registration import RegistrationRequest
 from app.db.models.results import Result, StudentProgressSnapshot
 from app.db.models.user import DeviceRegistration, RefreshSession, Role, User, UserRole
 
@@ -61,6 +62,7 @@ __all__ = [
     "PaymentTransaction",
     "QuestionBank",
     "RefreshSession",
+    "RegistrationRequest",
     "Result",
     "Role",
     "Standard",

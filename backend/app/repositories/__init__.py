@@ -6,6 +6,7 @@ from app.repositories.homework_repo import HomeworkRepository
 from app.repositories.notice_repo import NoticeRepository
 from app.repositories.notification_repo import NotificationRepository
 from app.repositories.parent_repo import ParentRepository
+from app.repositories.registration_repo import RegistrationRepository
 from app.repositories.result_repo import ResultRepository
 from app.repositories.student_repo import StudentRepository
 from app.repositories.teacher_repo import TeacherRepository
@@ -20,6 +21,7 @@ __all__ = [
     "NoticeRepository",
     "NotificationRepository",
     "ParentRepository",
+    "RegistrationRepository",
     "ResultRepository",
     "StudentRepository",
     "TeacherRepository",

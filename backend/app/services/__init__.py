@@ -9,6 +9,8 @@ from app.services.homework_service import HomeworkService
 from app.services.notice_service import NoticeService
 from app.services.notification_service import NotificationService
 from app.services.parent_service import ParentService
+from app.services.registration_review_service import RegistrationReviewService
+from app.services.registration_service import RegistrationService
 from app.services.result_service import ResultService
 from app.services.student_service import StudentService
 from app.services.teacher_service import TeacherService
@@ -25,6 +27,8 @@ __all__ = [
     "NoticeService",
     "NotificationService",
     "ParentService",
+    "RegistrationReviewService",
+    "RegistrationService",
     "ResultService",
     "StudentService",
     "TeacherService",

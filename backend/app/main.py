@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 from uuid import uuid4
 
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -31,6 +33,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+media_path = Path(settings.media_base_dir).expanduser().resolve()
+media_path.mkdir(parents=True, exist_ok=True)
+media_url = settings.media_base_url.strip() or "/media"
+if not media_url.startswith("/"):
+    media_url = f"/{media_url}"
+app.mount(media_url, StaticFiles(directory=str(media_path)), name="media")
 
 
 @app.middleware("http")

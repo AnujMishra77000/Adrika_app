@@ -35,6 +35,8 @@ class AuthSessionStore {
   static const _userIdKey = 'auth.user_id';
   static const _fullNameKey = 'auth.full_name';
   static const _rolesKey = 'auth.roles';
+  static const _schemaVersionKey = 'auth.schema_version';
+  static const _currentSchemaVersion = '3';
 
   Future<void> saveSession({
     required String accessToken,
@@ -48,9 +50,16 @@ class AuthSessionStore {
     await _storage.write(key: _userIdKey, value: userId);
     await _storage.write(key: _fullNameKey, value: fullName);
     await _storage.write(key: _rolesKey, value: jsonEncode(roles));
+    await _storage.write(key: _schemaVersionKey, value: _currentSchemaVersion);
   }
 
   Future<PersistedAuthSession?> readSession() async {
+    final schemaVersion = await _storage.read(key: _schemaVersionKey);
+    if (schemaVersion != _currentSchemaVersion) {
+      await clearSession();
+      return null;
+    }
+
     final accessToken = await _storage.read(key: _accessTokenKey);
     final refreshToken = await _storage.read(key: _refreshTokenKey);
     final userId = await _storage.read(key: _userIdKey);
@@ -89,5 +98,6 @@ class AuthSessionStore {
     await _storage.delete(key: _userIdKey);
     await _storage.delete(key: _fullNameKey);
     await _storage.delete(key: _rolesKey);
+    await _storage.delete(key: _schemaVersionKey);
   }
 }

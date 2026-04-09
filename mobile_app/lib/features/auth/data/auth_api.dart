@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
@@ -30,6 +31,78 @@ class AuthApi {
     );
 
     return LoginResponseData.fromJson(response);
+  }
+
+  Future<RegistrationResponseData> registerStudent({
+    required String name,
+    required String className,
+    required String stream,
+    required String contactNumber,
+    required String password,
+    required String confirmPassword,
+    required String parentContactNumber,
+    required String address,
+    required String schoolDetails,
+    String? photoPath,
+  }) async {
+    final formMap = <String, dynamic>{
+      'name': name,
+      'class_name': className,
+      'stream': stream,
+      'contact_number': contactNumber,
+      'password': password,
+      'confirm_password': confirmPassword,
+      'parent_contact_number': parentContactNumber,
+      'address': address,
+      'school_details': schoolDetails,
+    };
+
+    if (photoPath != null && photoPath.isNotEmpty) {
+      formMap['photo'] = await MultipartFile.fromFile(photoPath);
+    }
+
+    final response = await _client.postFormMap(
+      '/auth/register/student',
+      formData: FormData.fromMap(formMap),
+    );
+    return RegistrationResponseData.fromJson(response);
+  }
+
+  Future<RegistrationResponseData> registerTeacher({
+    required String name,
+    required int age,
+    required String gender,
+    required String qualification,
+    required String specialization,
+    String? schoolCollege,
+    required String contactNumber,
+    required String password,
+    required String confirmPassword,
+    required String address,
+    String? photoPath,
+  }) async {
+    final formMap = <String, dynamic>{
+      'name': name,
+      'age': age.toString(),
+      'gender': gender,
+      'qualification': qualification,
+      'specialization': specialization,
+      'school_college': schoolCollege,
+      'contact_number': contactNumber,
+      'password': password,
+      'confirm_password': confirmPassword,
+      'address': address,
+    };
+
+    if (photoPath != null && photoPath.isNotEmpty) {
+      formMap['photo'] = await MultipartFile.fromFile(photoPath);
+    }
+
+    final response = await _client.postFormMap(
+      '/auth/register/teacher',
+      formData: FormData.fromMap(formMap),
+    );
+    return RegistrationResponseData.fromJson(response);
   }
 
   Future<void> logout({required String refreshToken}) async {

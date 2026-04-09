@@ -63,6 +63,14 @@ class StudentProfile(Base, UUIDPKMixin, TimestampMixin):
         ForeignKey("batches.id", ondelete="SET NULL"), nullable=True
     )
 
+    # Self-registration fields (phase extension).
+    class_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    stream: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    parent_contact_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    school_details: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    photo_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
     user = relationship("User", lazy="joined")
 
     __table_args__ = (Index("ix_student_profiles_batch", "current_batch_id"),)
@@ -74,6 +82,15 @@ class TeacherProfile(Base, UUIDPKMixin, TimestampMixin):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     employee_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     designation: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Self-registration fields (phase extension).
+    age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    qualification: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    specialization: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    school_college: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    photo_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     user = relationship("User", lazy="joined")
 

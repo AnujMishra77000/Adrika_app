@@ -21,6 +21,7 @@ class AuthState {
   final String? fullName;
   final List<String> roles;
   final String? errorMessage;
+  final String? infoMessage;
 
   const AuthState({
     this.isBootstrapping = false,
@@ -31,6 +32,7 @@ class AuthState {
     this.fullName,
     this.roles = const <String>[],
     this.errorMessage,
+    this.infoMessage,
   });
 
   bool get isAuthenticated => accessToken != null && accessToken!.isNotEmpty;
@@ -44,7 +46,9 @@ class AuthState {
     String? fullName,
     List<String>? roles,
     String? errorMessage,
+    String? infoMessage,
     bool clearError = false,
+    bool clearInfo = false,
   }) {
     return AuthState(
       isBootstrapping: isBootstrapping ?? this.isBootstrapping,
@@ -55,6 +59,7 @@ class AuthState {
       fullName: fullName ?? this.fullName,
       roles: roles ?? this.roles,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      infoMessage: clearInfo ? null : (infoMessage ?? this.infoMessage),
     );
   }
 }
@@ -100,6 +105,7 @@ class AuthController extends StateNotifier<AuthState> {
       isBootstrapping: false,
       isLoading: true,
       clearError: true,
+      clearInfo: true,
     );
 
     try {
@@ -139,6 +145,122 @@ class AuthController extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  Future<bool> registerStudent({
+    required String name,
+    required String className,
+    required String stream,
+    required String contactNumber,
+    required String password,
+    required String confirmPassword,
+    required String parentContactNumber,
+    required String address,
+    required String schoolDetails,
+    String? photoPath,
+  }) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearInfo: true,
+    );
+
+    try {
+      final response = await _api.registerStudent(
+        name: name,
+        className: className,
+        stream: stream,
+        contactNumber: contactNumber,
+        password: password,
+        confirmPassword: confirmPassword,
+        parentContactNumber: parentContactNumber,
+        address: address,
+        schoolDetails: schoolDetails,
+        photoPath: photoPath,
+      );
+
+      state = state.copyWith(
+        isLoading: false,
+        infoMessage: response.message,
+        clearError: true,
+      );
+      return true;
+    } on AppException catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: error.message,
+        clearInfo: true,
+      );
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Registration failed. Please try again.',
+        clearInfo: true,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> registerTeacher({
+    required String name,
+    required int age,
+    required String gender,
+    required String qualification,
+    required String specialization,
+    String? schoolCollege,
+    required String contactNumber,
+    required String password,
+    required String confirmPassword,
+    required String address,
+    String? photoPath,
+  }) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearInfo: true,
+    );
+
+    try {
+      final response = await _api.registerTeacher(
+        name: name,
+        age: age,
+        gender: gender,
+        qualification: qualification,
+        specialization: specialization,
+        schoolCollege: schoolCollege,
+        contactNumber: contactNumber,
+        password: password,
+        confirmPassword: confirmPassword,
+        address: address,
+        photoPath: photoPath,
+      );
+
+      state = state.copyWith(
+        isLoading: false,
+        infoMessage: response.message,
+        clearError: true,
+      );
+      return true;
+    } on AppException catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: error.message,
+        clearInfo: true,
+      );
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Registration failed. Please try again.',
+        clearInfo: true,
+      );
+      return false;
+    }
+  }
+
+  void clearMessages() {
+    state = state.copyWith(clearError: true, clearInfo: true);
   }
 
   Future<void> logout() async {

@@ -20,6 +20,12 @@ async def profile(student_profile=Depends(get_current_student_profile)) -> dict:
         "admission_no": student_profile.admission_no,
         "roll_no": student_profile.roll_no,
         "current_batch_id": student_profile.current_batch_id,
+        "class_name": student_profile.class_name,
+        "stream": student_profile.stream,
+        "parent_contact_number": student_profile.parent_contact_number,
+        "address": student_profile.address,
+        "school_details": student_profile.school_details,
+        "photo_url": student_profile.photo_url,
     }
 
 

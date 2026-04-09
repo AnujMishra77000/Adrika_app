@@ -23,6 +23,7 @@ class AuthUser {
   final String fullName;
   final String? email;
   final String? phone;
+  final String? status;
   final List<String> roles;
 
   const AuthUser({
@@ -30,6 +31,7 @@ class AuthUser {
     required this.fullName,
     required this.email,
     required this.phone,
+    required this.status,
     required this.roles,
   });
 
@@ -43,6 +45,7 @@ class AuthUser {
       fullName: json['full_name']?.toString() ?? '',
       email: json['email']?.toString(),
       phone: json['phone']?.toString(),
+      status: json['status']?.toString(),
       roles: rawRoles,
     );
   }
@@ -63,6 +66,29 @@ class LoginResponseData {
     return LoginResponseData(
       tokens: AuthTokens.fromJson(tokensJson),
       user: AuthUser.fromJson(userJson),
+    );
+  }
+}
+
+class RegistrationResponseData {
+  final String requestId;
+  final String userId;
+  final String status;
+  final String message;
+
+  const RegistrationResponseData({
+    required this.requestId,
+    required this.userId,
+    required this.status,
+    required this.message,
+  });
+
+  factory RegistrationResponseData.fromJson(Map<String, dynamic> json) {
+    return RegistrationResponseData(
+      requestId: json['request_id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      status: json['status']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
     );
   }
 }

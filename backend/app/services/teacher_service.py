@@ -24,6 +24,13 @@ class TeacherService:
             "full_name": teacher_profile.user.full_name,
             "employee_code": teacher_profile.employee_code,
             "designation": teacher_profile.designation,
+            "age": teacher_profile.age,
+            "gender": teacher_profile.gender,
+            "qualification": teacher_profile.qualification,
+            "specialization": teacher_profile.specialization,
+            "school_college": teacher_profile.school_college,
+            "address": teacher_profile.address,
+            "photo_url": teacher_profile.photo_url,
         }
 
     async def list_assignments(self, *, teacher_id: str) -> list[dict]:

@@ -28,7 +28,10 @@ from app.schemas.admin import (
     AdminFeeInvoiceCreateDTO,
     AdminPaymentReconcileDTO,
 )
+from app.schemas.registration import AdminRegistrationDecisionDTO
 from app.services.admin_service import AdminService
+from app.services.notification_service import NotificationService
+from app.services.registration_review_service import RegistrationReviewService
 from app.utils.pagination import build_meta
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_roles("admin"))])
@@ -82,6 +85,40 @@ async def update_student(
     return await AdminService(session).update_student(
         user_id=user_id,
         payload=payload,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
+@router.get("/registration-requests")
+async def list_registration_requests(
+    status: str = Query(default="pending"),
+    role: str = Query(default="all"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await RegistrationReviewService(session).list_requests(
+        status=status,
+        role=role,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.post("/registration-requests/{request_id}/decision")
+async def decide_registration_request(
+    request_id: str,
+    payload: AdminRegistrationDecisionDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await RegistrationReviewService(session).decide_request(
+        request_id=request_id,
+        status=payload.status,
+        note=payload.note,
         actor_user_id=current_user.id,
         ip_address=_client_ip(request),
     )
@@ -484,6 +521,55 @@ async def create_notification(
         actor_user_id=current_user.id,
         ip_address=_client_ip(request),
     )
+
+
+@router.get("/me/notifications")
+async def list_my_notifications(
+    is_read: bool | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    current_user=Depends(get_current_user),
+) -> dict:
+    service = NotificationService(session, cache)
+    items, total = await service.list_for_user(
+        user_id=current_user.id,
+        is_read=is_read,
+        limit=limit,
+        offset=offset,
+    )
+    unread_count = await service.unread_count(user_id=current_user.id)
+    return {
+        "items": items,
+        "meta": build_meta(total=total, limit=limit, offset=offset),
+        "unread_count": unread_count,
+    }
+
+
+@router.post("/me/notifications/{notification_id}/read")
+async def mark_my_notification_read(
+    notification_id: str,
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    current_user=Depends(get_current_user),
+) -> dict:
+    service = NotificationService(session, cache)
+    await service.mark_read(user_id=current_user.id, notification_id=notification_id)
+    unread_count = await service.unread_count(user_id=current_user.id)
+    return {"message": "Marked as read", "unread_count": unread_count}
+
+
+@router.post("/me/notifications/read-all")
+async def mark_all_my_notifications_read(
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    current_user=Depends(get_current_user),
+) -> dict:
+    service = NotificationService(session, cache)
+    await service.mark_all_read(user_id=current_user.id)
+    unread_count = await service.unread_count(user_id=current_user.id)
+    return {"message": "All notifications marked as read", "unread_count": unread_count}
 
 
 @router.get("/parents")

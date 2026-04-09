@@ -14,6 +14,12 @@ class UserStatus(StrEnum):
     SUSPENDED = "suspended"
 
 
+class RegistrationRequestStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
 class NoticeStatus(StrEnum):
     DRAFT = "draft"
     PUBLISHED = "published"

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:3000"],
     )
 
+    # Local media fallback for development. In production this should map to object storage.
+    media_base_dir: str = "./media"
+    media_base_url: str = "/media"
+
     s3_endpoint_url: str = ""
     s3_access_key: str = ""
     s3_secret_key: str = ""

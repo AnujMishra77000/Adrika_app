@@ -16,7 +16,7 @@ class _StudentShellScreenState extends State<StudentShellScreen> {
   int _currentIndex = 0;
 
   static const _titles = <String>[
-    'Student Dashboard',
+    'Student Home',
     'Notices',
     'Homework',
     'Profile',
@@ -31,8 +31,14 @@ class _StudentShellScreenState extends State<StudentShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appBar = _currentIndex == 0
+        ? null
+        : AppBar(
+            title: Text(_titles[_currentIndex]),
+          );
+
     return Scaffold(
-      appBar: AppBar(title: Text(_titles[_currentIndex])),
+      appBar: appBar,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -46,9 +52,9 @@ class _StudentShellScreenState extends State<StudentShellScreen> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.campaign_outlined),
