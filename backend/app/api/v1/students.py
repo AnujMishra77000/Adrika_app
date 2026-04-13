@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +7,8 @@ from app.cache.redis_client import get_redis
 from app.db.session import get_db_session
 from app.services.content_service import ContentService
 from app.services.dashboard_service import DashboardService
+from app.services.lecture_schedule_service import LectureScheduleService
+from app.utils.pagination import build_meta
 
 router = APIRouter(prefix="/students/me", tags=["students"])
 
@@ -40,7 +42,26 @@ async def dashboard(
         user_id=current_user.id,
         student_id=student_profile.id,
         batch_id=student_profile.current_batch_id,
+        class_name=student_profile.class_name,
+        stream=student_profile.stream,
     )
+
+
+@router.get("/lectures/scheduled")
+async def list_scheduled_lectures(
+    status: str | None = Query(default="scheduled"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+    student_profile=Depends(get_current_student_profile),
+) -> dict:
+    items, total = await LectureScheduleService(session).list_for_student(
+        student_profile=student_profile,
+        status=status,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
 
 
 @router.get("/content")

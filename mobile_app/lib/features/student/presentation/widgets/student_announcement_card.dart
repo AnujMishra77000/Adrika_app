@@ -48,16 +48,16 @@ class StudentAnnouncementCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isUnread
-                  ? const [Color(0xFF63CFAE), Color(0xFF46BA96)]
-                  : const [Color(0xFF7FD8BE), Color(0xFF66C8AC)],
+                  ? const [Color(0xFF3FAF3D), Color(0xFF2B8F2A)]
+                  : const [Color(0xFF57BE54), Color(0xFF3D9F3A)],
             ),
             border: Border.all(
               color:
-                  isUnread ? const Color(0xFFBDF5E0) : const Color(0xFFD6F9EC),
+                  isUnread ? const Color(0xFFAEF0A8) : const Color(0xFFC9F5C5),
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1D8C6B).withValues(alpha: 0.24),
+                color: const Color(0xFF1C6E1A).withValues(alpha: 0.24),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),

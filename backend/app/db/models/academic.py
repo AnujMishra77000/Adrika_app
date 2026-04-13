@@ -1,9 +1,21 @@
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.models.enums import LectureScheduleStatus
 from app.db.models.mixins import TimestampMixin, UUIDPKMixin
 
 
@@ -42,6 +54,21 @@ class Subject(Base, UUIDPKMixin, TimestampMixin):
 
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+
+class SubjectAcademicScope(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "subject_academic_scopes"
+
+    subject_id: Mapped[str] = mapped_column(ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
+    class_level: Mapped[int] = mapped_column(Integer, nullable=False)
+    # common -> class 10, science/commerce -> class 11/12 streams.
+    stream: Mapped[str] = mapped_column(String(20), nullable=False, default="common")
+
+    __table_args__ = (
+        UniqueConstraint("subject_id", "class_level", "stream", name="uq_subject_scope"),
+        Index("ix_subject_scope_class_stream", "class_level", "stream"),
+        Index("ix_subject_scope_subject", "subject_id"),
+    )
 
 
 class BatchSubject(Base, TimestampMixin):
@@ -107,6 +134,88 @@ class TeacherBatchAssignment(Base, UUIDPKMixin, TimestampMixin):
         Index("ix_teacher_assignment_teacher", "teacher_id"),
         Index("ix_teacher_assignment_batch", "batch_id"),
         Index("ix_teacher_assignment_subject", "subject_id"),
+    )
+
+
+class LectureSchedule(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "lecture_schedules"
+
+    class_level: Mapped[int] = mapped_column(Integer, nullable=False)
+    stream: Mapped[str] = mapped_column(String(20), nullable=False, default="common")
+    subject_id: Mapped[str] = mapped_column(ForeignKey("subjects.id", ondelete="RESTRICT"), nullable=False)
+    teacher_id: Mapped[str] = mapped_column(ForeignKey("teacher_profiles.id", ondelete="RESTRICT"), nullable=False)
+    batch_id: Mapped[str | None] = mapped_column(ForeignKey("batches.id", ondelete="SET NULL"), nullable=True)
+
+    topic: Mapped[str] = mapped_column(String(255), nullable=False)
+    lecture_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[LectureScheduleStatus] = mapped_column(
+        Enum(LectureScheduleStatus, name="lecture_schedule_status", native_enum=False),
+        nullable=False,
+        default=LectureScheduleStatus.SCHEDULED,
+    )
+    all_students_in_scope: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    created_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    completed_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_lecture_schedules_status_scheduled", "status", "scheduled_at"),
+        Index("ix_lecture_schedules_scope_scheduled", "class_level", "stream", "scheduled_at"),
+        Index("ix_lecture_schedules_teacher_scheduled", "teacher_id", "scheduled_at"),
+        Index("ix_lecture_schedules_subject_scheduled", "subject_id", "scheduled_at"),
+    )
+
+
+class LectureScheduleStudent(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "lecture_schedule_students"
+
+    lecture_schedule_id: Mapped[str] = mapped_column(
+        ForeignKey("lecture_schedules.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    student_id: Mapped[str] = mapped_column(
+        ForeignKey("student_profiles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("lecture_schedule_id", "student_id", name="uq_lecture_schedule_student"),
+        Index("ix_lecture_schedule_students_schedule", "lecture_schedule_id"),
+        Index("ix_lecture_schedule_students_student", "student_id"),
+    )
+
+
+class CompletedLecture(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "completed_lectures"
+
+    teacher_id: Mapped[str] = mapped_column(ForeignKey("teacher_profiles.id", ondelete="RESTRICT"), nullable=False)
+    subject_id: Mapped[str] = mapped_column(ForeignKey("subjects.id", ondelete="RESTRICT"), nullable=False)
+    batch_id: Mapped[str | None] = mapped_column(ForeignKey("batches.id", ondelete="SET NULL"), nullable=True)
+    schedule_id: Mapped[str | None] = mapped_column(
+        ForeignKey("lecture_schedules.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    class_level: Mapped[int] = mapped_column(Integer, nullable=False)
+    stream: Mapped[str] = mapped_column(String(20), nullable=False, default="common")
+    topic: Mapped[str] = mapped_column(String(255), nullable=False)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index("ix_completed_lectures_teacher_completed", "teacher_id", "completed_at"),
+        Index("ix_completed_lectures_batch_completed", "batch_id", "completed_at"),
+        Index("ix_completed_lectures_scope_completed", "class_level", "stream", "completed_at"),
+        Index("ix_completed_lectures_subject_completed", "subject_id", "completed_at"),
+        Index("ix_completed_lectures_schedule", "schedule_id"),
     )
 
 

@@ -1,0 +1,266 @@
+.root {
+  min-height: calc(100vh - 48px);
+  background:
+    radial-gradient(980px 400px at 8% -20%, rgba(248, 206, 92, 0.18), transparent 56%),
+    radial-gradient(920px 420px at 95% -15%, rgba(82, 156, 255, 0.22), transparent 60%),
+    linear-gradient(145deg, #171034 0%, #102449 52%, #143463 100%);
+  border-radius: 20px;
+  padding: 20px;
+  color: #f7faff;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.subtitle {
+  margin-top: 8px;
+  margin-bottom: 0;
+  color: rgba(219, 231, 255, 0.86);
+  font-size: 14px;
+}
+
+.error,
+.success {
+  margin-top: 12px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.error {
+  color: #ffe2e2;
+  border: 1px solid rgba(255, 126, 126, 0.35);
+  background: rgba(175, 35, 63, 0.4);
+}
+
+.success {
+  color: #dcffe7;
+  border: 1px solid rgba(109, 230, 155, 0.4);
+  background: rgba(20, 115, 75, 0.34);
+}
+
+.scopeRow {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scopeBtn,
+.scopeBtnActive {
+  border: 1px solid rgba(125, 162, 255, 0.28);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: #d6e4ff;
+  background: rgba(20, 33, 76, 0.72);
+  font-weight: 600;
+  letter-spacing: 0.15px;
+}
+
+.scopeBtnActive {
+  color: #fff;
+  border-color: rgba(255, 215, 95, 0.6);
+  background: linear-gradient(135deg, rgba(112, 137, 251, 0.92), rgba(60, 97, 245, 0.92));
+}
+
+.summaryGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.summaryCard {
+  border-radius: 14px;
+  border: 1px solid rgba(136, 170, 255, 0.28);
+  background: rgba(10, 24, 55, 0.84);
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.summaryCard span {
+  font-size: 12px;
+  color: rgba(210, 224, 255, 0.82);
+}
+
+.summaryCard strong {
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.layout {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 12px;
+}
+
+.leftPanel,
+.rightPanel {
+  border-radius: 16px;
+  border: 1px solid rgba(136, 170, 255, 0.28);
+  background: rgba(10, 24, 55, 0.84);
+  padding: 14px;
+  min-height: 560px;
+}
+
+.panelHeader h3 {
+  margin: 0;
+}
+
+.searchRow {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  border: 1px solid rgba(125, 158, 245, 0.38);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(14, 38, 79, 0.86);
+  color: #f5f9ff;
+}
+
+.input:focus {
+  outline: none;
+  border-color: rgba(255, 215, 95, 0.7);
+  box-shadow: 0 0 0 3px rgba(249, 203, 79, 0.14);
+}
+
+.btnSecondary,
+.btnPrimary {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.btnSecondary {
+  background: linear-gradient(135deg, #2f3f74, #213760);
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, #2a5eb4, #234f97);
+}
+
+.loading,
+.empty {
+  margin-top: 12px;
+  color: rgba(211, 224, 255, 0.8);
+}
+
+.subjectGroup {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.subjectGroup h4 {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(230, 239, 255, 0.95);
+}
+
+.topicCard,
+.topicCardActive {
+  text-align: left;
+  border: 1px solid rgba(128, 161, 240, 0.28);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(13, 32, 68, 0.82);
+  color: #f4f9ff;
+}
+
+.topicCardActive {
+  border-color: rgba(255, 215, 95, 0.6);
+  background: linear-gradient(130deg, rgba(57, 86, 169, 0.88), rgba(41, 71, 148, 0.9));
+}
+
+.topicTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.topicSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(212, 226, 255, 0.88);
+}
+
+.topicMeta {
+  margin-top: 6px;
+  display: grid;
+  gap: 3px;
+  font-size: 11px;
+  color: rgba(200, 217, 250, 0.84);
+}
+
+.assessmentMeta {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(226, 238, 255, 0.95);
+}
+
+.tableWrap {
+  margin-top: 12px;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(130, 163, 245, 0.22);
+}
+
+.table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+  background: rgba(10, 28, 61, 0.8);
+}
+
+.table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  color: rgba(216, 230, 255, 0.9);
+  background: rgba(26, 53, 100, 0.96);
+  padding: 10px;
+  text-align: left;
+}
+
+.table td {
+  padding: 10px;
+  border-top: 1px solid rgba(130, 163, 245, 0.2);
+  color: rgba(237, 245, 255, 0.94);
+  font-size: 13px;
+}
+
+.studentName {
+  font-weight: 700;
+}
+
+.studentSub {
+  font-size: 11px;
+  color: rgba(200, 217, 250, 0.84);
+  margin-top: 2px;
+}
+
+@media (max-width: 1160px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

@@ -21,7 +21,7 @@ export default function AdminAuditLogsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const response = await apiRequest<{ items: AuditItem[] }>('/api/v1/admin/audit-logs?limit=200&offset=0');
+        const response = await apiRequest<{ items: AuditItem[] }>('/api/v1/admin/audit-logs?limit=100&offset=0');
         setItems(response.items);
         setError(null);
       } catch (err) {

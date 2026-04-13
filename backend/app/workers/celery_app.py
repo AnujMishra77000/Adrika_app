@@ -11,6 +11,7 @@ celery_app = Celery(
     include=[
         "app.workers.tasks_notifications",
         "app.workers.tasks_outbox",
+        "app.workers.tasks_assessments",
     ],
 )
 
@@ -25,11 +26,16 @@ celery_app.conf.update(
     task_routes={
         "app.workers.tasks_notifications.*": {"queue": "notifications_bulk"},
         "app.workers.tasks_outbox.*": {"queue": "integrations"},
+        "app.workers.tasks_assessments.*": {"queue": "assessments"},
     },
     beat_schedule={
         "process-outbox-every-minute": {
             "task": "app.workers.tasks_outbox.process_outbox_events",
             "schedule": 60.0,
-        }
+        },
+        "process-assessments-every-minute": {
+            "task": "app.workers.tasks_assessments.process_assessment_schedules",
+            "schedule": 60.0,
+        },
     },
 )

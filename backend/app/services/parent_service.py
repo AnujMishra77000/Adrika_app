@@ -29,6 +29,18 @@ class ParentService:
         self.result_repo = ResultRepository(session)
         self.notification_repo = NotificationRepository(session)
 
+    @staticmethod
+    def _extract_class_level(class_name: str | None) -> int | None:
+        if not class_name:
+            return None
+        if "10" in class_name:
+            return 10
+        if "11" in class_name:
+            return 11
+        if "12" in class_name:
+            return 12
+        return None
+
     async def _resolve_student(self, *, parent_id: str, student_id: str | None):
         linked_ids = await self.parent_repo.linked_student_ids(parent_id=parent_id)
         if not linked_ids:
@@ -97,6 +109,8 @@ class ParentService:
         pending_homework = await self.homework_repo.pending_count_for_student(
             student_id=student.id,
             batch_id=student.current_batch_id,
+            class_level=self._extract_class_level(student.class_name),
+            stream=student.stream,
         )
         attendance = await self.attendance_repo.summary_for_student(student_id=student.id, date_from=None, date_to=None)
         upcoming_tests = await self.assessment_repo.upcoming_count_for_student(
@@ -135,6 +149,8 @@ class ParentService:
             user_id=user_id,
             student_id=student.id,
             batch_id=student.current_batch_id,
+            class_level=self._extract_class_level(student.class_name),
+            stream=student.stream,
             limit=limit,
             offset=offset,
         )
@@ -159,6 +175,8 @@ class ParentService:
             user_id=user_id,
             student_id=student.id,
             batch_id=student.current_batch_id,
+            class_level=self._extract_class_level(student.class_name),
+            stream=student.stream,
         )
         if not notice:
             raise NotFoundException("Notice not found")
@@ -193,6 +211,8 @@ class ParentService:
         rows, total = await self.homework_repo.list_for_student(
             student_id=student.id,
             batch_id=student.current_batch_id,
+            class_level=self._extract_class_level(student.class_name),
+            stream=student.stream,
             subject_id=subject_id,
             due_from=due_from,
             due_to=due_to,

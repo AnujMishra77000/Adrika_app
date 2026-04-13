@@ -32,6 +32,11 @@ class HomeworkStatus(StrEnum):
     CLOSED = "closed"
 
 
+class HomeworkSubmissionStatus(StrEnum):
+    SUBMITTED = "submitted"
+    LATE = "late"
+
+
 class AttendanceStatus(StrEnum):
     PRESENT = "present"
     ABSENT = "absent"
@@ -62,6 +67,12 @@ class DoubtStatus(StrEnum):
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
     CLOSED = "closed"
+
+
+class LectureScheduleStatus(StrEnum):
+    SCHEDULED = "scheduled"
+    DONE = "done"
+    CANCELED = "canceled"
 
 
 class NotificationType(StrEnum):

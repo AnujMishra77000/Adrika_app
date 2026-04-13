@@ -87,7 +87,7 @@ export default function AdminParentsPage() {
 
   async function loadStudents() {
     const response = await apiRequest<{ items: StudentItem[] }>(
-      "/api/v1/admin/students?limit=300&offset=0",
+      "/api/v1/admin/students?limit=100&offset=0",
     );
     setStudents(response.items);
     if (!studentId && response.items.length > 0) {

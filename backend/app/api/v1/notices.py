@@ -24,6 +24,8 @@ async def list_notices(
         user_id=current_user.id,
         student_id=student_profile.id,
         batch_id=student_profile.current_batch_id,
+        class_name=student_profile.class_name,
+        stream=student_profile.stream,
         limit=limit,
         offset=offset,
     )
@@ -43,6 +45,8 @@ async def detail(
         user_id=current_user.id,
         student_id=student_profile.id,
         batch_id=student_profile.current_batch_id,
+        class_name=student_profile.class_name,
+        stream=student_profile.stream,
     )
 
 

@@ -37,6 +37,10 @@ async def get_current_user(
     if not user:
         raise UnauthorizedException("User not found")
 
+    user_status = user.status.value if hasattr(user.status, "value") else str(user.status)
+    if user_status != "active":
+        raise UnauthorizedException("Account is inactive. Please contact admin")
+
     return user
 
 

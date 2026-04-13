@@ -14,6 +14,7 @@ from app.services.registration_service import RegistrationService
 from app.services.result_service import ResultService
 from app.services.student_service import StudentService
 from app.services.teacher_service import TeacherService
+from app.services.lecture_schedule_service import LectureScheduleService
 
 __all__ = [
     "AdminService",
@@ -32,4 +33,5 @@ __all__ = [
     "ResultService",
     "StudentService",
     "TeacherService",
+    "LectureScheduleService",
 ]

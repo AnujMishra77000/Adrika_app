@@ -11,7 +11,9 @@ import '../features/parent/presentation/parent_notices_screen.dart';
 import '../features/parent/presentation/parent_progress_screen.dart';
 import '../features/parent/presentation/parent_results_screen.dart';
 import '../features/parent/presentation/parent_shell_screen.dart';
+import '../features/student/presentation/student_assessment_screens.dart';
 import '../features/student/presentation/student_feature_screens.dart';
+import '../features/student/presentation/student_notices_screen.dart';
 import '../features/student/presentation/student_shell_screen.dart';
 import '../features/teacher/presentation/teacher_shell_screen.dart';
 
@@ -60,6 +62,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const StudentShellScreen(),
       ),
       GoRoute(
+        path: '/student/notices',
+        pageBuilder: (context, state) =>
+            _studentTransitionPage(state, const StudentNoticesScreen()),
+      ),
+      GoRoute(
         path: '/student/notifications',
         pageBuilder: (context, state) =>
             _studentTransitionPage(state, const StudentNotificationsScreen()),
@@ -96,8 +103,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/student/practice-tests',
-        pageBuilder: (context, state) =>
-            _studentTransitionPage(state, const StudentPracticeTestScreen()),
+        pageBuilder: (context, state) => _studentTransitionPage(
+          state,
+          const StudentAssessmentListScreen(
+            type: StudentAssessmentViewType.practice,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/student/tests/attempts/:attemptId/result',
+        pageBuilder: (context, state) {
+          final attemptId = state.pathParameters['attemptId'] ?? '';
+          return _studentTransitionPage(
+            state,
+            StudentAssessmentResultScreen(attemptId: attemptId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/student/tests/attempts/:attemptId',
+        pageBuilder: (context, state) {
+          final attemptId = state.pathParameters['attemptId'] ?? '';
+          return _studentTransitionPage(
+            state,
+            StudentAssessmentAttemptScreen(attemptId: attemptId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/student/tests/:assessmentId',
+        pageBuilder: (context, state) {
+          final assessmentId = state.pathParameters['assessmentId'] ?? '';
+          return _studentTransitionPage(
+            state,
+            StudentAssessmentDetailScreen(assessmentId: assessmentId),
+          );
+        },
       ),
       GoRoute(
         path: '/student/progress',
@@ -111,8 +152,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/student/online-tests',
-        pageBuilder: (context, state) =>
-            _studentTransitionPage(state, const StudentOnlineTestScreen()),
+        pageBuilder: (context, state) => _studentTransitionPage(
+          state,
+          const StudentAssessmentListScreen(
+            type: StudentAssessmentViewType.online,
+          ),
+        ),
       ),
       GoRoute(
         path: '/student/chat',

@@ -1,6 +1,7 @@
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.models.enums import NotificationType
 from app.db.models.notification import Notification
 
 
@@ -24,6 +25,14 @@ class NotificationRepository:
         stmt = select(func.count()).where(Notification.recipient_user_id == user_id, Notification.is_read.is_(False))
         return (await self.session.execute(stmt)).scalar_one()
 
+    async def unread_count_by_type(self, *, user_id: str, notification_type: NotificationType) -> int:
+        stmt = select(func.count()).where(
+            Notification.recipient_user_id == user_id,
+            Notification.notification_type == notification_type,
+            Notification.is_read.is_(False),
+        )
+        return (await self.session.execute(stmt)).scalar_one()
+
     async def mark_read(self, *, notification_id: str, user_id: str) -> None:
         await self.session.execute(
             update(Notification)
@@ -34,4 +43,15 @@ class NotificationRepository:
     async def mark_all_read(self, *, user_id: str) -> None:
         await self.session.execute(
             update(Notification).where(Notification.recipient_user_id == user_id).values(is_read=True)
+        )
+
+    async def mark_all_read_by_type(self, *, user_id: str, notification_type: NotificationType) -> None:
+        await self.session.execute(
+            update(Notification)
+            .where(
+                Notification.recipient_user_id == user_id,
+                Notification.notification_type == notification_type,
+                Notification.is_read.is_(False),
+            )
+            .values(is_read=True)
         )

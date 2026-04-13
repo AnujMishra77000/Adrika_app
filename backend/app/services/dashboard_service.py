@@ -17,16 +17,47 @@ class DashboardService:
         self.notification_repo = NotificationRepository(session)
         self.cache = cache
 
-    async def get_student_dashboard(self, *, user_id: str, student_id: str, batch_id: str | None) -> dict:
+    @staticmethod
+    def _extract_class_level(class_name: str | None) -> str | None:
+        text = (class_name or "").strip()
+        if "10" in text:
+            return "10"
+        if "11" in text:
+            return "11"
+        if "12" in text:
+            return "12"
+        return None
+
+    @staticmethod
+    def _normalize_stream(stream: str | None) -> str | None:
+        value = (stream or "").strip().lower()
+        if value in {"science", "sci"}:
+            return "science"
+        if value in {"commerce", "comm"}:
+            return "commerce"
+        return None
+
+    async def get_student_dashboard(
+        self,
+        *,
+        user_id: str,
+        student_id: str,
+        batch_id: str | None,
+        class_name: str | None,
+        stream: str | None,
+    ) -> dict:
         key = student_dashboard_key(student_id)
         cached = await get_json(self.cache, key)
         if cached:
             return cached
 
         unread = await self.notification_repo.unread_count(user_id=user_id)
-        pending_homework = await self.homework_repo.pending_count_for_student(
+        pending_homework = await self.homework_repo.unseen_count_for_student(
+            user_id=user_id,
             student_id=student_id,
             batch_id=batch_id,
+            class_level=self._extract_class_level(class_name),
+            stream=self._normalize_stream(stream),
         )
         attendance = await self.attendance_repo.summary_for_student(student_id=student_id, date_from=None, date_to=None)
         upcoming_tests = await self.assessment_repo.upcoming_count_for_student(

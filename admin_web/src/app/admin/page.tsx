@@ -12,8 +12,6 @@ type OverviewStats = {
   doubts: number;
   results: number;
   banners: number;
-  fee_invoices: number;
-  payments: number;
 };
 
 const initialStats: OverviewStats = {
@@ -24,8 +22,6 @@ const initialStats: OverviewStats = {
   doubts: 0,
   results: 0,
   banners: 0,
-  fee_invoices: 0,
-  payments: 0,
 };
 
 const cards: Array<{ key: keyof OverviewStats; label: string }> = [
@@ -36,8 +32,6 @@ const cards: Array<{ key: keyof OverviewStats; label: string }> = [
   { key: "doubts", label: "Doubts" },
   { key: "results", label: "Results" },
   { key: "banners", label: "Banners" },
-  { key: "fee_invoices", label: "Fee Invoices" },
-  { key: "payments", label: "Payments" },
 ];
 
 export default function AdminOverviewPage() {
@@ -50,7 +44,7 @@ export default function AdminOverviewPage() {
 
     async function load() {
       try {
-        const [students, parents, notices, homework, doubts, results, banners, feeInvoices, payments] =
+        const [students, parents, notices, homework, doubts, results, banners] =
           await Promise.all([
             apiRequest<{ meta: { total: number } }>("/api/v1/admin/students?limit=1&offset=0"),
             apiRequest<{ meta: { total: number } }>("/api/v1/admin/parents?limit=1&offset=0"),
@@ -59,8 +53,6 @@ export default function AdminOverviewPage() {
             apiRequest<{ meta: { total: number } }>("/api/v1/admin/doubts?limit=1&offset=0"),
             apiRequest<{ meta: { total: number } }>("/api/v1/admin/results?limit=1&offset=0"),
             apiRequest<{ meta: { total: number } }>("/api/v1/admin/banners?limit=1&offset=0"),
-            apiRequest<{ meta: { total: number } }>("/api/v1/admin/fee-invoices?limit=1&offset=0"),
-            apiRequest<{ meta: { total: number } }>("/api/v1/admin/payments?limit=1&offset=0"),
           ]);
 
         if (!mounted) {
@@ -75,8 +67,6 @@ export default function AdminOverviewPage() {
           doubts: doubts.meta.total,
           results: results.meta.total,
           banners: banners.meta.total,
-          fee_invoices: feeInvoices.meta.total,
-          payments: payments.meta.total,
         });
         setLoading(false);
       } catch (err) {

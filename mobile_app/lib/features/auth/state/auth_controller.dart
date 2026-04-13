@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/app_exception.dart';
@@ -73,15 +75,58 @@ class AuthController extends StateNotifier<AuthState> {
   final AuthApi _api;
   final AuthSessionStore _sessionStore;
 
+  bool _looksExpiredJwt(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        return false;
+      }
+
+      final payload =
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final decoded = jsonDecode(payload);
+      if (decoded is! Map<String, dynamic>) {
+        return false;
+      }
+
+      final expRaw = decoded['exp'];
+      final expSeconds =
+          expRaw is int ? expRaw : int.tryParse(expRaw?.toString() ?? '');
+
+      if (expSeconds == null) {
+        return false;
+      }
+
+      final expiresAt = DateTime.fromMillisecondsSinceEpoch(
+        expSeconds * 1000,
+        isUtc: true,
+      );
+
+      // 30s skew tolerance
+      return DateTime.now()
+          .toUtc()
+          .isAfter(expiresAt.subtract(const Duration(seconds: 30)));
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _restoreSession() async {
     try {
       final session = await _sessionStore.readSession();
 
       if (state.isAuthenticated) {
+        state = state.copyWith(isBootstrapping: false);
         return;
       }
 
       if (session == null) {
+        state = const AuthState(isBootstrapping: false);
+        return;
+      }
+
+      if (_looksExpiredJwt(session.accessToken)) {
+        await _sessionStore.clearSession();
         state = const AuthState(isBootstrapping: false);
         return;
       }
@@ -261,6 +306,11 @@ class AuthController extends StateNotifier<AuthState> {
 
   void clearMessages() {
     state = state.copyWith(clearError: true, clearInfo: true);
+  }
+
+  Future<void> clearSessionLocal() async {
+    await _sessionStore.clearSession();
+    state = const AuthState(isBootstrapping: false);
   }
 
   Future<void> logout() async {

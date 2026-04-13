@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     whatsapp_base_url: str = ""
     whatsapp_access_token: str = ""
     whatsapp_phone_number_id: str = ""
+    institute_display_name: str = "Adrika Smart Institute"
+    fee_payment_contact_number: str = ""
+    fee_payment_upi_id: str = ""
 
     @field_validator("cors_origins", mode="before")
     @classmethod

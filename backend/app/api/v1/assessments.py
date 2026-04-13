@@ -22,6 +22,8 @@ async def list_tests(
     items, total = await AssessmentService(session).list_for_student(
         student_id=student_profile.id,
         batch_id=student_profile.current_batch_id,
+        class_name=student_profile.class_name,
+        stream=student_profile.stream,
         assessment_type=assessment_type,
         status=status,
         subject_id=subject_id,
@@ -29,6 +31,21 @@ async def list_tests(
         offset=offset,
     )
     return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.get("/{assessment_id}")
+async def test_detail(
+    assessment_id: str,
+    session: AsyncSession = Depends(get_db_session),
+    student_profile=Depends(get_current_student_profile),
+) -> dict:
+    return await AssessmentService(session).get_test_detail(
+        assessment_id=assessment_id,
+        student_id=student_profile.id,
+        batch_id=student_profile.current_batch_id,
+        class_name=student_profile.class_name,
+        stream=student_profile.stream,
+    )
 
 
 @router.post("/{assessment_id}/attempts")
@@ -41,6 +58,8 @@ async def start_attempt(
         assessment_id=assessment_id,
         student_id=student_profile.id,
         batch_id=student_profile.current_batch_id,
+        class_name=student_profile.class_name,
+        stream=student_profile.stream,
     )
 
 
@@ -52,13 +71,24 @@ async def save_answer(
     session: AsyncSession = Depends(get_db_session),
     student_profile=Depends(get_current_student_profile),
 ) -> dict:
-    await AssessmentService(session).save_answer(
+    return await AssessmentService(session).save_answer(
         attempt_id=attempt_id,
         student_id=student_profile.id,
         question_id=question_id,
         answer_payload=payload,
     )
-    return {"message": "Answer saved"}
+
+
+@router.get("/attempts/{attempt_id}")
+async def attempt_detail(
+    attempt_id: str,
+    session: AsyncSession = Depends(get_db_session),
+    student_profile=Depends(get_current_student_profile),
+) -> dict:
+    return await AssessmentService(session).get_attempt_detail(
+        attempt_id=attempt_id,
+        student_id=student_profile.id,
+    )
 
 
 @router.post("/attempts/{attempt_id}/submit")

@@ -2,10 +2,14 @@ from app.db.models.academic import (
     Batch,
     BatchSubject,
     Branch,
+    CompletedLecture,
+    LectureSchedule,
+    LectureScheduleStudent,
     Standard,
     StudentBatchEnrollment,
     StudentProfile,
     Subject,
+    SubjectAcademicScope,
     TeacherBatchAssignment,
     TeacherProfile,
 )
@@ -19,10 +23,17 @@ from app.db.models.assessment import (
 )
 from app.db.models.attendance import AttendanceCorrection, AttendanceRecord
 from app.db.models.audit import AuditLog, IdempotencyKey, OutboxEvent
-from app.db.models.billing import FeeInvoice, PaymentTransaction
-from app.db.models.content import Banner, DailyThought, Notice, NoticeRead, NoticeTarget
+from app.db.models.billing import FeeInvoice, FeeStructure, PaymentTransaction, StudentFeeStructureAssignment
+from app.db.models.content import Banner, DailyThought, Notice, NoticeAttachment, NoticeRead, NoticeTarget
 from app.db.models.doubt import Doubt, DoubtMessage
-from app.db.models.homework import Homework, HomeworkTarget
+from app.db.models.homework import (
+    Homework,
+    HomeworkAttachment,
+    HomeworkRead,
+    HomeworkSubmission,
+    HomeworkSubmissionAttachment,
+    HomeworkTarget,
+)
 from app.db.models.notification import Notification, NotificationDelivery
 from app.db.models.parent import ParentCommunicationPreference, ParentProfile, ParentStudentLink
 from app.db.models.registration import RegistrationRequest
@@ -42,15 +53,24 @@ __all__ = [
     "Batch",
     "BatchSubject",
     "Branch",
+    "CompletedLecture",
+    "LectureSchedule",
+    "LectureScheduleStudent",
     "DailyThought",
     "DeviceRegistration",
     "Doubt",
     "DoubtMessage",
     "FeeInvoice",
+    "FeeStructure",
     "Homework",
+    "HomeworkAttachment",
+    "HomeworkRead",
+    "HomeworkSubmission",
+    "HomeworkSubmissionAttachment",
     "HomeworkTarget",
     "IdempotencyKey",
     "Notice",
+    "NoticeAttachment",
     "NoticeRead",
     "NoticeTarget",
     "Notification",
@@ -60,6 +80,7 @@ __all__ = [
     "ParentProfile",
     "ParentStudentLink",
     "PaymentTransaction",
+    "StudentFeeStructureAssignment",
     "QuestionBank",
     "RefreshSession",
     "RegistrationRequest",
@@ -70,6 +91,7 @@ __all__ = [
     "StudentProfile",
     "StudentProgressSnapshot",
     "Subject",
+    "SubjectAcademicScope",
     "TeacherBatchAssignment",
     "TeacherProfile",
     "User",

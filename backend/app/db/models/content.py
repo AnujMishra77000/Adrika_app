@@ -36,6 +36,25 @@ class NoticeTarget(Base, UUIDPKMixin, TimestampMixin):
     )
 
 
+class NoticeAttachment(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "notice_attachments"
+
+    notice_id: Mapped[str] = mapped_column(ForeignKey("notices.id", ondelete="CASCADE"), nullable=False)
+    attachment_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    storage_path: Mapped[str] = mapped_column(String(1024), nullable=False)
+    file_url: Mapped[str] = mapped_column(String(1024), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    image_width: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    image_height: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    __table_args__ = (
+        Index("ix_notice_attachments_notice", "notice_id"),
+        Index("ix_notice_attachments_notice_created", "notice_id", "created_at"),
+    )
+
+
 class NoticeRead(Base, UUIDPKMixin, TimestampMixin):
     __tablename__ = "notice_reads"
 

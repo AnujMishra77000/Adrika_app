@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AssessmentItemDTO(BaseModel):
@@ -13,12 +13,16 @@ class AssessmentItemDTO(BaseModel):
     duration_sec: int
 
 
+class AssessmentAnswerDTO(BaseModel):
+    selected_key: str = Field(min_length=1, max_length=4)
+
+
 class StartAttemptRequestDTO(BaseModel):
-    idempotency_key: str
+    idempotency_key: str | None = None
 
 
 class SubmitAttemptDTO(BaseModel):
-    idempotency_key: str
+    idempotency_key: str | None = None
 
 
 class AttemptResponseDTO(BaseModel):

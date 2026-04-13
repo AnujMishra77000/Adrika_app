@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { apiRequest } from "@/lib/api";
-import { clearAccessToken } from "@/lib/auth";
+import { clearAuthTokens } from "@/lib/auth";
 
 type AuthState = "loading" | "ready";
 
@@ -18,12 +18,14 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/students", label: "Students" },
+  { href: "/admin/teachers", label: "Teachers" },
   { href: "/admin/registrations", label: "Registrations" },
   { href: "/admin/parents", label: "Parents" },
-  { href: "/admin/fees", label: "Fee Invoices" },
-  { href: "/admin/payments", label: "Payments" },
+  { href: "/admin/fees", label: "Fees" },
+  { href: "/admin/lecture-schedules", label: "Lecture Schedule" },
   { href: "/admin/notices", label: "Notices" },
   { href: "/admin/homework", label: "Homework" },
+  { href: "/admin/homework/completions", label: "HW Completion" },
   { href: "/admin/attendance", label: "Attendance" },
   { href: "/admin/assessments", label: "Assessments" },
   { href: "/admin/results", label: "Results" },
@@ -47,7 +49,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       try {
         const me = await apiRequest<{ full_name: string; roles: string[] }>("/api/v1/auth/me");
         if (!me.roles.includes("admin")) {
-          clearAccessToken();
+          clearAuthTokens();
           router.replace("/login");
           return;
         }
@@ -56,7 +58,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           setState("ready");
         }
       } catch {
-        clearAccessToken();
+        clearAuthTokens();
         router.replace("/login");
       }
     }
@@ -115,7 +117,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
         <nav style={{ display: "grid", gap: 6 }}>
           {nav.map((item) => {
-            const active = pathname === item.href;
+            const active = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.href}
@@ -160,7 +162,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           className="btn"
           style={{ marginTop: 16, width: "100%", background: "#334155" }}
           onClick={() => {
-            clearAccessToken();
+            clearAuthTokens();
             router.replace("/login");
           }}
         >

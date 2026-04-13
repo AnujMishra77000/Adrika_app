@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 
-import '../../models/student_models.dart';
+import "../../models/student_models.dart";
 
 class StudentQuickActionGrid extends StatelessWidget {
   const StudentQuickActionGrid({
@@ -17,33 +17,34 @@ class StudentQuickActionGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final crossAxisCount = width < 360 ? 2 : 3;
+        final columns = width >= 460 ? 5 : (width >= 390 ? 4 : 3);
+        const spacing = 8.0;
+        final itemWidth =
+            (width - (spacing * (columns - 1))).clamp(0, double.infinity) /
+                columns;
 
-        return GridView.builder(
-          shrinkWrap: true,
-          itemCount: items.length,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 1.18,
-          ),
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return _QuickActionCard(
-              item: item,
-              onTap: () => onTap(item.route),
-            );
-          },
+        return Wrap(
+          spacing: spacing,
+          runSpacing: 14,
+          children: items
+              .map(
+                (item) => SizedBox(
+                  width: itemWidth,
+                  child: _QuickActionIcon(
+                    item: item,
+                    onTap: () => onTap(item.route),
+                  ),
+                ),
+              )
+              .toList(growable: false),
         );
       },
     );
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({
+class _QuickActionIcon extends StatelessWidget {
+  const _QuickActionIcon({
     required this.item,
     required this.onTap,
   });
@@ -53,92 +54,109 @@ class _QuickActionCard extends StatelessWidget {
 
   IconData _iconFromKey(String key) {
     switch (key) {
-      case 'notes':
-        return Icons.note_alt_rounded;
-      case 'homework':
-        return Icons.assignment_turned_in_rounded;
-      case 'online_test':
-        return Icons.desktop_windows_rounded;
-      case 'practice':
-        return Icons.quiz_rounded;
-      case 'chat':
-        return Icons.forum_rounded;
+      case "notice":
+        return Icons.campaign_rounded;
+      case "notes":
+        return Icons.edit_note_rounded;
+      case "homework":
+        return Icons.menu_book_rounded;
+      case "online_test":
+        return Icons.laptop_chromebook_rounded;
+      case "practice":
+        return Icons.fact_check_rounded;
+      case "chat":
+        return Icons.chat_bubble_rounded;
       default:
         return Icons.apps_rounded;
     }
   }
 
-  Color _iconColorFromKey(String key) {
-    switch (key) {
-      case 'notes':
-        return const Color(0xFFE754A6);
-      case 'homework':
-        return const Color(0xFF1DBB8A);
-      case 'online_test':
-        return const Color(0xFF0EA5E9);
-      case 'practice':
-        return const Color(0xFF7C5CFF);
-      case 'chat':
-        return const Color(0xFF2D84F4);
-      default:
-        return const Color(0xFF4B5563);
-    }
+  @override
+  Widget build(BuildContext context) {
+    final icon = _iconFromKey(item.iconKey);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 38,
+                height: 34,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Align(
+                      alignment: Alignment.center,
+                      child: Icon(
+                        icon,
+                        size: 30,
+                        color: item.accentColor,
+                      ),
+                    ),
+                    if (item.badgeCount > 0)
+                      Positioned(
+                        right: -8,
+                        top: -4,
+                        child: _CounterBadge(count: item.badgeCount),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                item.title,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: const Color(0xFFE6E1FF),
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
+}
+
+class _CounterBadge extends StatelessWidget {
+  const _CounterBadge({required this.count});
+
+  final int count;
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = _iconColorFromKey(item.iconKey);
+    final text = count > 99 ? "99+" : "$count";
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFD9E3F1)),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                item.accentColor.withValues(alpha: 0.11),
-                Colors.white,
-              ],
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    _iconFromKey(item.iconKey),
-                    size: 22,
-                    color: iconColor,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  item.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
-                      ),
-                ),
-              ],
-            ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      transitionBuilder: (child, animation) => ScaleTransition(
+        scale: animation,
+        child: child,
+      ),
+      child: Container(
+        key: ValueKey<String>(text),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+        constraints: const BoxConstraints(minWidth: 18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE11D48),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

@@ -14,3 +14,7 @@ export function clearAccessToken(): void {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(TOKEN_KEY);
 }
+
+export function clearAuthTokens(): void {
+  clearAccessToken();
+}

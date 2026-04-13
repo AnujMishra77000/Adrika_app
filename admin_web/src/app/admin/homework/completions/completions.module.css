@@ -1,0 +1,227 @@
+.root {
+  min-height: calc(100vh - 48px);
+  background:
+    radial-gradient(1200px 450px at 8% -20%, rgba(255, 215, 95, 0.2), transparent 52%),
+    radial-gradient(950px 500px at 94% -18%, rgba(86, 160, 255, 0.24), transparent 58%),
+    linear-gradient(145deg, #181136 0%, #101e43 55%, #112f57 100%);
+  border-radius: 20px;
+  padding: 22px;
+  color: #f8faff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 45px rgba(9, 8, 32, 0.35);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.12;
+  color: #fffef7;
+}
+
+.subtitle {
+  margin-top: 8px;
+  margin-bottom: 0;
+  color: rgba(232, 239, 255, 0.84);
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.error {
+  margin-top: 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #ffe2e2;
+  border: 1px solid rgba(255, 126, 126, 0.35);
+  background: rgba(175, 35, 63, 0.4);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.summaryCard {
+  border-radius: 16px;
+  border: 1px solid rgba(146, 173, 255, 0.35);
+  background: linear-gradient(165deg, rgba(32, 43, 99, 0.9) 0%, rgba(20, 49, 96, 0.9) 100%);
+  padding: 14px;
+}
+
+.summaryLabel {
+  color: rgba(213, 224, 255, 0.84);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.65px;
+}
+
+.summaryValue {
+  margin-top: 6px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.card {
+  border-radius: 18px;
+  border: 1px solid rgba(136, 170, 255, 0.3);
+  background: rgba(10, 24, 55, 0.86);
+  box-shadow: 0 14px 30px rgba(2, 11, 35, 0.34);
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.cardTitle {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.field,
+.fieldWide {
+  display: grid;
+  gap: 6px;
+}
+
+.fieldWide {
+  grid-column: span 2;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  color: rgba(206, 222, 255, 0.9);
+}
+
+.input,
+.select {
+  border: 1px solid rgba(125, 158, 245, 0.38);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(14, 38, 79, 0.86);
+  color: #f5f9ff;
+  outline: none;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btnPrimary,
+.btnSecondary,
+.linkBtn {
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, #4c79ff, #2859e6);
+}
+
+.btnSecondary {
+  background: linear-gradient(135deg, #2f3f74, #213760);
+}
+
+.linkBtn {
+  background: linear-gradient(135deg, #1f8f6d, #127755);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(141, 170, 245, 0.26);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+  background: rgba(10, 28, 61, 0.8);
+}
+
+.table thead th {
+  font-size: 12px;
+  letter-spacing: 0.45px;
+  text-transform: uppercase;
+  color: rgba(216, 230, 255, 0.9);
+  background: rgba(26, 53, 100, 0.96);
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(126, 155, 227, 0.2);
+  text-align: left;
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+.rowTitle {
+  color: #f4f8ff;
+  font-weight: 700;
+}
+
+.rowMuted {
+  color: rgba(188, 206, 244, 0.82);
+  font-size: 12px;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badgeOnTime {
+  background: rgba(18, 131, 79, 0.5);
+  border: 1px solid rgba(55, 214, 130, 0.45);
+}
+
+.badgeLate {
+  background: rgba(122, 92, 23, 0.55);
+  border: 1px solid rgba(255, 215, 95, 0.45);
+}
+
+@media (max-width: 900px) {
+  .formGrid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .fieldWide {
+    grid-column: span 2;
+  }
+
+  .buttons {
+    grid-column: span 2;
+    justify-content: flex-start;
+  }
+}

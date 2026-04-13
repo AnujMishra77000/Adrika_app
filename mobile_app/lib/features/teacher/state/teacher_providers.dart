@@ -28,7 +28,36 @@ final teacherAssignmentsProvider =
   return ref.watch(teacherApiProvider).fetchAssignments(accessToken: token);
 });
 
+final teacherScheduledLecturesProvider =
+    FutureProvider<List<TeacherScheduledLecture>>((ref) async {
+  final token = _requireAccessToken(ref);
+  return ref
+      .watch(teacherApiProvider)
+      .fetchScheduledLectures(accessToken: token, limit: 30);
+});
+
+final teacherCompletedLecturesProvider =
+    FutureProvider<List<TeacherCompletedLecture>>((ref) async {
+  final token = _requireAccessToken(ref);
+  return ref
+      .watch(teacherApiProvider)
+      .fetchCompletedLectures(accessToken: token, limit: 12);
+});
+
 final teacherNoticesProvider = FutureProvider<List<TeacherNotice>>((ref) async {
   final token = _requireAccessToken(ref);
   return ref.watch(teacherApiProvider).fetchNotices(accessToken: token);
+});
+
+final teacherDoubtsProvider = FutureProvider<List<TeacherDoubtItem>>((ref) async {
+  final token = _requireAccessToken(ref);
+  return ref.watch(teacherApiProvider).fetchDoubts(accessToken: token);
+});
+
+final teacherDoubtDetailProvider =
+    FutureProvider.family<TeacherDoubtDetail, String>((ref, doubtId) async {
+  final token = _requireAccessToken(ref);
+  return ref
+      .watch(teacherApiProvider)
+      .fetchDoubtDetail(accessToken: token, doubtId: doubtId);
 });

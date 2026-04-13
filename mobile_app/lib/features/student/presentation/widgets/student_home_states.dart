@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'student_home_palette.dart';
+import 'student_surface_card.dart';
+
 class StudentHomeLoadingList extends StatelessWidget {
   const StudentHomeLoadingList({super.key});
 
@@ -11,7 +14,7 @@ class StudentHomeLoadingList extends StatelessWidget {
       children: const [
         _SkeletonBox(height: 72),
         SizedBox(height: 14),
-        _SkeletonBox(height: 250),
+        _SkeletonBox(height: 228),
         SizedBox(height: 14),
         _SkeletonBox(height: 120),
         SizedBox(height: 14),
@@ -19,6 +22,26 @@ class StudentHomeLoadingList extends StatelessWidget {
         SizedBox(height: 14),
         _SkeletonBox(height: 112),
       ],
+    );
+  }
+}
+
+class StudentFeedLoadingList extends StatelessWidget {
+  const StudentFeedLoadingList({
+    super.key,
+    this.itemCount = 4,
+  });
+
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: StudentUiSpacing.page,
+      itemBuilder: (context, index) => const _SkeletonBox(height: 132),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemCount: itemCount,
     );
   }
 }
@@ -35,14 +58,7 @@ class StudentHomeEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFDCE4F1)),
-      ),
+    return StudentSurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -50,13 +66,14 @@ class StudentHomeEmptyState extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: StudentHomePalette.textPrimary,
                 ),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF64748B),
+                  color: StudentHomePalette.textMuted,
                 ),
           ),
         ],
@@ -81,20 +98,15 @@ class StudentHomeErrorList extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       children: [
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFFFD3D9)),
-          ),
+        StudentSurfaceCard(
+          borderColor: const Color(0xFFFFD3D9),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Unable to load student home',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFFB42318),
+                      color: StudentHomePalette.danger,
                       fontWeight: FontWeight.w700,
                     ),
               ),
@@ -124,7 +136,7 @@ class _SkeletonBox extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(StudentUiRadius.card),
         color: const Color(0xFFE9EEF6),
       ),
     );

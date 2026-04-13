@@ -14,18 +14,28 @@ class NotificationService:
 
     async def list_for_user(self, *, user_id: str, is_read: bool | None, limit: int, offset: int) -> tuple[list[dict], int]:
         rows, total = await self.repo.list_for_user(user_id=user_id, is_read=is_read, limit=limit, offset=offset)
-        return [
-            {
-                "id": row.id,
-                "notification_type": row.notification_type.value if hasattr(row.notification_type, "value") else str(row.notification_type),
-                "title": row.title,
-                "body": row.body,
-                "metadata": row.metadata_json,
-                "is_read": row.is_read,
-                "created_at": row.created_at,
-            }
-            for row in rows
-        ], total
+        items = []
+        for row in rows:
+            metadata = row.metadata_json if isinstance(row.metadata_json, dict) else {}
+            source = metadata.get("source")
+            if not source:
+                source = row.notification_type.value if hasattr(row.notification_type, "value") else str(row.notification_type)
+
+            items.append(
+                {
+                    "id": row.id,
+                    "notification_type": row.notification_type.value if hasattr(row.notification_type, "value") else str(row.notification_type),
+                    "title": row.title,
+                    "body": row.body,
+                    "metadata": metadata,
+                    "source": source,
+                    "notice_id": metadata.get("notice_id"),
+                    "is_read": row.is_read,
+                    "created_at": row.created_at,
+                }
+            )
+
+        return items, total
 
     async def unread_count(self, *, user_id: str) -> int:
         key = student_unread_notifications_key(user_id)

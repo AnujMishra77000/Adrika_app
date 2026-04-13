@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, Query
 from redis.asyncio import Redis
@@ -7,8 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_teacher_profile, get_current_user
 from app.cache.redis_client import get_redis
 from app.db.session import get_db_session
+from app.schemas.doubt import TeacherCompleteLectureDTO
 from app.schemas.teacher import TeacherAddDoubtMessageDTO, TeacherUpdateDoubtStatusDTO
 from app.services.notification_service import NotificationService
+from app.services.lecture_schedule_service import LectureScheduleService
 from app.services.teacher_service import TeacherService
 from app.utils.pagination import build_meta
 
@@ -16,7 +18,11 @@ router = APIRouter(prefix="/teachers/me", tags=["teachers"])
 
 
 @router.get("/profile")
-async def profile(teacher_profile=Depends(get_current_teacher_profile), session: AsyncSession = Depends(get_db_session), cache: Redis = Depends(get_redis)) -> dict:
+async def profile(
+    teacher_profile=Depends(get_current_teacher_profile),
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+) -> dict:
     return await TeacherService(session, cache).profile(teacher_profile=teacher_profile)
 
 
@@ -41,6 +47,58 @@ async def assignments(
 ) -> dict:
     items = await TeacherService(session, cache).list_assignments(teacher_id=teacher_profile.id)
     return {"items": items}
+
+
+@router.get("/lectures/done")
+async def list_completed_lectures(
+    class_level: int | None = Query(default=None, ge=10, le=12),
+    stream: str | None = Query(default=None),
+    subject_id: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    teacher_profile=Depends(get_current_teacher_profile),
+) -> dict:
+    items, total = await TeacherService(session, cache).list_completed_lectures(
+        teacher_id=teacher_profile.id,
+        class_level=class_level,
+        stream=stream,
+        subject_id=subject_id,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.post("/lectures/done")
+async def create_completed_lecture(
+    payload: TeacherCompleteLectureDTO,
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    teacher_profile=Depends(get_current_teacher_profile),
+) -> dict:
+    return await TeacherService(session, cache).create_completed_lecture(
+        teacher_id=teacher_profile.id,
+        payload=payload,
+    )
+
+
+@router.get("/lectures/scheduled")
+async def list_scheduled_lectures(
+    status: str | None = Query(default="scheduled"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+    teacher_profile=Depends(get_current_teacher_profile),
+) -> dict:
+    items, total = await LectureScheduleService(session).list_for_teacher(
+        teacher_id=teacher_profile.id,
+        status=status,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
 
 
 @router.get("/notices")
@@ -167,6 +225,22 @@ async def doubt_detail(
         teacher_id=teacher_profile.id,
         doubt_id=doubt_id,
     )
+
+
+@router.get("/doubts/{doubt_id}/messages")
+async def list_doubt_messages(
+    doubt_id: str,
+    since: datetime | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    teacher_profile=Depends(get_current_teacher_profile),
+) -> dict:
+    items = await TeacherService(session, cache).list_doubt_messages(
+        teacher_id=teacher_profile.id,
+        doubt_id=doubt_id,
+        since=since,
+    )
+    return {"items": items}
 
 
 @router.post("/doubts/{doubt_id}/messages")
