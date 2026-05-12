@@ -32,7 +32,7 @@ class FeeStructure(Base, UUIDPKMixin, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     __table_args__ = (
-        CheckConstraint("class_level IN (10, 11, 12)", name="ck_fee_structure_class_level"),
+        CheckConstraint("class_level IN (6, 7, 8, 9, 10, 11, 12)", name="ck_fee_structure_class_level"),
         CheckConstraint("stream IS NULL OR stream IN ('science', 'commerce')", name="ck_fee_structure_stream"),
         Index("ix_fee_structure_class_stream_active", "class_level", "stream", "is_active"),
     )

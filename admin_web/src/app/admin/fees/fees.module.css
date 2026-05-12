@@ -1,13 +1,11 @@
 .root {
   min-height: calc(100vh - 48px);
-  background:
-    radial-gradient(1200px 450px at 8% -20%, rgba(255, 215, 95, 0.2), transparent 52%),
-    radial-gradient(950px 500px at 94% -18%, rgba(86, 160, 255, 0.24), transparent 58%),
-    linear-gradient(145deg, #181136 0%, #101e43 55%, #112f57 100%);
+  background: linear-gradient(180deg, #fbf8ff 0%, #f3ecff 100%);
+  border: 1px solid #ddcff8;
   border-radius: 20px;
   padding: 22px;
-  color: #f8faff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 45px rgba(9, 8, 32, 0.35);
+  color: #2a1b45;
+  box-shadow: 0 8px 22px rgba(80, 49, 141, 0.08);
 }
 
 .headerRow {
@@ -23,13 +21,13 @@
   font-size: 33px;
   line-height: 1.12;
   letter-spacing: 0.2px;
-  color: #fffef7;
+  color: #352158;
 }
 
 .subtitle {
   margin-top: 8px;
   margin-bottom: 0;
-  color: rgba(232, 239, 255, 0.84);
+  color: #6f5f94;
   font-size: 14px;
 }
 
@@ -38,9 +36,9 @@
   border-radius: 12px;
   padding: 10px 12px;
   font-size: 14px;
-  color: #ffe2e2;
-  border: 1px solid rgba(255, 126, 126, 0.35);
-  background: rgba(175, 35, 63, 0.4);
+  color: #7a1f2f;
+  border: 1px solid #efb7c1;
+  background: #ffe7ec;
 }
 
 .summaryGrid {
@@ -52,14 +50,14 @@
 
 .summaryCard {
   border-radius: 16px;
-  border: 1px solid rgba(146, 173, 255, 0.35);
-  background: linear-gradient(165deg, rgba(32, 43, 99, 0.9) 0%, rgba(20, 49, 96, 0.9) 100%);
+  border: 1px solid #ddd1f8;
+  background: linear-gradient(180deg, #fff 0%, #f8f3ff 100%);
   padding: 14px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 20px rgba(80, 49, 141, 0.08);
 }
 
 .summaryLabel {
-  color: rgba(213, 224, 255, 0.84);
+  color: #6a578f;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.65px;
@@ -70,6 +68,7 @@
   font-size: 24px;
   font-weight: 700;
   line-height: 1.1;
+  color: #2a1b45;
 }
 
 .sectionTabs {
@@ -81,11 +80,11 @@
 }
 
 .tabButton {
-  border: 1px solid rgba(125, 162, 255, 0.3);
+  border: 1px solid #dacbf7;
   border-radius: 999px;
   padding: 8px 14px;
-  color: #d6e4ff;
-  background: rgba(20, 33, 76, 0.74);
+  color: #5c4a82;
+  background: #f4ecff;
   font-weight: 600;
   letter-spacing: 0.2px;
   transition: transform 120ms ease, background 140ms ease;
@@ -93,19 +92,20 @@
 
 .tabButton:hover {
   transform: translateY(-1px);
+  background: #efe4ff;
 }
 
 .tabActive {
   color: #fff;
-  border-color: rgba(255, 215, 95, 0.6);
-  background: linear-gradient(135deg, rgba(112, 137, 251, 0.92), rgba(60, 97, 245, 0.92));
+  border-color: #bda4ef;
+  background: linear-gradient(135deg, #7e5bd8 0%, #5f3fbf 100%);
 }
 
 .card {
-  border-radius: 18px;
-  border: 1px solid rgba(136, 170, 255, 0.3);
-  background: rgba(10, 24, 55, 0.86);
-  box-shadow: 0 14px 30px rgba(2, 11, 35, 0.34);
+  border-radius: 16px;
+  border: 1px solid #ddd1f8;
+  background: linear-gradient(180deg, #fff 0%, #f8f3ff 100%);
+  box-shadow: 0 8px 20px rgba(80, 49, 141, 0.08);
   padding: 16px;
 }
 
@@ -117,11 +117,11 @@
   margin-top: 0;
   margin-bottom: 12px;
   font-size: 20px;
-  color: #f6f8ff;
+  color: #352158;
 }
 
 .cardSubtle {
-  color: rgba(211, 224, 255, 0.76);
+  color: #6f5f94;
   font-size: 13px;
   margin: 0 0 12px;
 }
@@ -141,30 +141,30 @@
 
 .fieldLabel {
   font-size: 12px;
-  color: rgba(206, 222, 255, 0.9);
+  color: #57467d;
 }
 
 .input,
 .select,
 .textarea {
-  border: 1px solid rgba(125, 158, 245, 0.38);
+  border: 1px solid #d6c6f7;
   border-radius: 10px;
   padding: 10px 12px;
-  background: rgba(14, 38, 79, 0.86);
-  color: #f5f9ff;
+  background: #fff;
+  color: #2a1b45;
   outline: none;
 }
 
 .input::placeholder,
 .textarea::placeholder {
-  color: rgba(173, 192, 235, 0.65);
+  color: #907cb7;
 }
 
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: rgba(255, 215, 95, 0.7);
-  box-shadow: 0 0 0 3px rgba(249, 203, 79, 0.14);
+  border-color: #b79ae9;
+  box-shadow: 0 0 0 3px rgba(138, 93, 212, 0.16);
 }
 
 .buttonRow {
@@ -194,15 +194,15 @@
 }
 
 .btnPrimary {
-  background: linear-gradient(135deg, #4c79ff, #2859e6);
+  background: linear-gradient(135deg, #7a57d5, #5f3fbf);
 }
 
 .btnSecondary {
-  background: linear-gradient(135deg, #2f3f74, #213760);
+  background: linear-gradient(135deg, #8a79b4, #6f5f94);
 }
 
 .btnNeutral {
-  background: linear-gradient(135deg, #2b6b85, #235c74);
+  background: linear-gradient(135deg, #6f8ad0, #536fb8);
 }
 
 .btnDanger {
@@ -210,11 +210,11 @@
 }
 
 .btnPreset {
-  background: rgba(30, 60, 116, 0.92);
+  background: linear-gradient(135deg, #8f76c8, #745aa9);
 }
 
 .btnLink {
-  background: linear-gradient(135deg, #3e88fa, #2d69db);
+  background: linear-gradient(135deg, #8d63df, #6a45cb);
   padding: 7px 12px;
   font-size: 13px;
 }
@@ -239,14 +239,14 @@
 .tableWrap {
   overflow-x: auto;
   border-radius: 14px;
-  border: 1px solid rgba(141, 170, 245, 0.26);
+  border: 1px solid #ddd1f8;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   min-width: 1020px;
-  background: rgba(10, 28, 61, 0.8);
+  background: #fff;
 }
 
 .table thead th {
@@ -256,29 +256,30 @@
   font-size: 12px;
   letter-spacing: 0.45px;
   text-transform: uppercase;
-  color: rgba(216, 230, 255, 0.9);
-  background: rgba(26, 53, 100, 0.96);
+  color: #4a376f;
+  background: #f4ecff;
 }
 
 .table th,
 .table td {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(126, 155, 227, 0.2);
+  border-bottom: 1px solid #ebdefa;
   text-align: left;
   vertical-align: middle;
   font-size: 13px;
+  color: #2f1e50;
 }
 
 .table tbody tr:nth-child(even) {
-  background: rgba(12, 34, 72, 0.62);
+  background: #fbf8ff;
 }
 
 .table tbody tr:hover {
-  background: rgba(42, 71, 126, 0.45);
+  background: #f2eaff;
 }
 
 .muted {
-  color: rgba(186, 203, 236, 0.8);
+  color: #7d6b9e;
 }
 
 .badge {
@@ -289,9 +290,9 @@
   letter-spacing: 0.35px;
   font-weight: 700;
   text-transform: uppercase;
-  border: 1px solid rgba(150, 185, 255, 0.44);
-  color: #eaf2ff;
-  background: rgba(35, 71, 137, 0.65);
+  border: 1px solid #d9caf7;
+  color: #4e3192;
+  background: #f3ebff;
 }
 
 .tick,
@@ -307,7 +308,7 @@
 }
 
 .tick {
-  background: #14b86d;
+  background: #18b56c;
   color: #f7fffb;
 }
 
@@ -315,6 +316,20 @@
   background: #e24f63;
   color: #fff3f5;
 }
+
+.invoiceStack {
+  display: grid;
+  gap: 6px;
+  min-width: 260px;
+}
+
+.invoiceItem {
+  border: 1px solid #ddcff8;
+  border-radius: 10px;
+  background: #f9f4ff;
+  padding: 6px 8px;
+}
+
 
 @media (max-width: 900px) {
   .root {

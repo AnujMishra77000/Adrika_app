@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 _PHONE_PATTERN = re.compile(r"^[0-9]{10,15}$")
+_TEACHING_SCOPES = {"10-common", "11-science", "11-commerce", "12-science", "12-commerce"}
 
 
 class StudentRegistrationDTO(BaseModel):
@@ -57,6 +58,7 @@ class TeacherRegistrationDTO(BaseModel):
     qualification: str = Field(min_length=2, max_length=255)
     specialization: str = Field(min_length=2, max_length=255)
     school_college: str | None = Field(default=None, max_length=255)
+    teaching: str = Field(min_length=3, max_length=30)
     contact_number: str
     password: str = Field(min_length=8, max_length=128)
     confirm_password: str = Field(min_length=8, max_length=128)
@@ -68,6 +70,24 @@ class TeacherRegistrationDTO(BaseModel):
         normalized = value.strip().lower()
         if normalized not in {"male", "female", "other"}:
             raise ValueError("gender must be one of: male, female, other")
+        return normalized
+
+    @field_validator("teaching")
+    @classmethod
+    def normalize_teaching(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized in {"10", "10th", "10-common", "10th-common"}:
+            return "10-common"
+        if normalized in {"11 science", "11-science", "11th science", "11th-science"}:
+            return "11-science"
+        if normalized in {"11 commerce", "11-commerce", "11th commerce", "11th-commerce"}:
+            return "11-commerce"
+        if normalized in {"12 science", "12-science", "12th science", "12th-science"}:
+            return "12-science"
+        if normalized in {"12 commerce", "12-commerce", "12th commerce", "12th-commerce"}:
+            return "12-commerce"
+        if normalized not in _TEACHING_SCOPES:
+            raise ValueError("teaching must be one of: 10-common, 11-science, 11-commerce, 12-science, 12-commerce")
         return normalized
 
     @field_validator("contact_number")

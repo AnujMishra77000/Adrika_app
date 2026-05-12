@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { apiRequest } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/env';
 
 import styles from './fees.module.css';
 
@@ -34,6 +35,9 @@ type FeeStudent = {
   pending_amount: number;
   next_due_date: string | null;
   payment_status: 'pending' | 'paid' | 'not_assigned' | string;
+  missed_payment_count?: number;
+  missed_payment_amount?: number;
+  is_overdue?: boolean;
   account_status: string;
   fee_structure_assigned: boolean;
   fee_structure_id: string | null;
@@ -45,6 +49,50 @@ type FeeStudent = {
   last_paid_at: string | null;
 };
 
+
+type ReceiptFetchResponse = {
+  student_id: string;
+  student_name: string;
+  is_fully_paid: boolean;
+  generated: boolean;
+  receipt: {
+    file_name: string;
+    download_url: string;
+    generated_at: string;
+    invoice_no: string | null;
+    payment_id: string | null;
+  };
+};
+
+type FeeOverdueStudent = {
+  student_id: string;
+  user_id: string;
+  full_name: string;
+  phone: string | null;
+  parent_contact_number: string | null;
+  class_name: string | null;
+  class_level: number | null;
+  stream: string;
+  overdue_amount: number;
+  overdue_installments: number;
+  earliest_due_date: string | null;
+  latest_due_date: string | null;
+  days_overdue: number;
+  last_reminder_sent_at: string | null;
+  invoices: Array<{
+    invoice_id: string;
+    invoice_no: string;
+    installment_no: number | null;
+    due_date: string | null;
+    days_overdue: number;
+    status: string;
+    amount: number;
+    balance_amount: number;
+    reminder_enabled: boolean;
+    last_reminder_sent_at: string | null;
+  }>;
+};
+
 type FeeSummary = {
   total_students: number;
   paid_students: number;
@@ -53,15 +101,19 @@ type FeeSummary = {
   total_invoiced_amount: number;
   total_paid_amount: number;
   total_pending_amount: number;
+  overdue_students?: number;
+  overdue_installments?: number;
+  overdue_amount?: number;
 };
 
-type SectionKey = 'structure' | 'students' | 'pending' | 'paid';
+type SectionKey = 'structure' | 'students' | 'pending' | 'paid' | 'overdue';
 
 const SECTION_LABELS: Record<SectionKey, string> = {
   structure: 'Fee Structure',
   students: 'Student List',
   pending: 'Pending',
   paid: 'Paid',
+  overdue: 'Overdue & Reminders',
 };
 
 const DEFAULT_SUMMARY: FeeSummary = {
@@ -72,6 +124,9 @@ const DEFAULT_SUMMARY: FeeSummary = {
   total_invoiced_amount: 0,
   total_paid_amount: 0,
   total_pending_amount: 0,
+  overdue_students: 0,
+  overdue_installments: 0,
+  overdue_amount: 0,
 };
 
 function currency(value: number): string {
@@ -80,6 +135,13 @@ function currency(value: number): string {
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function formatDate(value: string | null): string {
+  if (!value) return '-';
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return value;
+  return dt.toLocaleDateString('en-IN');
 }
 
 function normalizedStream(classLevel: number, stream: string): 'science' | 'commerce' | null {
@@ -100,11 +162,17 @@ export default function AdminFeesPage() {
 
   const [structures, setStructures] = useState<FeeStructure[]>([]);
   const [students, setStudents] = useState<FeeStudent[]>([]);
+  const [overdueStudents, setOverdueStudents] = useState<FeeOverdueStudent[]>([]);
 
   const [loadingStructures, setLoadingStructures] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [loadingOverdue, setLoadingOverdue] = useState(false);
   const [savingStructure, setSavingStructure] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [printingStudentId, setPrintingStudentId] = useState<string | null>(null);
+  const [sendingReminderStudentId, setSendingReminderStudentId] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [overdueReminderMessage, setOverdueReminderMessage] = useState('');
 
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
@@ -127,8 +195,11 @@ export default function AdminFeesPage() {
     () => [
       { title: 'Fully Paid', value: String(summary.paid_students) },
       { title: 'Pending Fees', value: String(summary.pending_students) },
+      { title: 'Overdue Students', value: String(summary.overdue_students ?? 0) },
+      { title: 'Overdue Installments', value: String(summary.overdue_installments ?? 0) },
       { title: 'Without Setup', value: String(summary.students_without_fee) },
       { title: 'Pending Amount', value: currency(summary.total_pending_amount) },
+      { title: 'Overdue Amount', value: currency(summary.overdue_amount ?? 0) },
     ],
     [summary],
   );
@@ -179,10 +250,40 @@ export default function AdminFeesPage() {
     setLoadingStudents(false);
   }
 
+  async function loadOverdue(options?: { searchText?: string; classValue?: string; streamValue?: string }) {
+    setLoadingOverdue(true);
+
+    const params = new URLSearchParams({
+      limit: '100',
+      offset: '0',
+    });
+
+    const searchValue = options?.searchText ?? search;
+    const classValue = options?.classValue ?? classFilter;
+    const streamValue = options?.streamValue ?? streamFilter;
+
+    const trimmedSearch = searchValue.trim();
+    if (trimmedSearch) {
+      params.set('search', trimmedSearch);
+    }
+
+    if (classValue) {
+      params.set('class_level', classValue);
+    }
+
+    if (streamValue) {
+      params.set('stream', streamValue);
+    }
+
+    const response = await apiRequest<{ items: FeeOverdueStudent[] }>(`/api/v1/admin/fees/overdue?${params.toString()}`);
+    setOverdueStudents(response.items);
+    setLoadingOverdue(false);
+  }
+
   async function bootstrap() {
     setError(null);
     try {
-      await Promise.all([loadSummary(), loadStructures(), loadStudents('all')]);
+      await Promise.all([loadSummary(), loadStructures(), loadStudents('all'), loadOverdue()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load fee module');
       setLoadingStructures(false);
@@ -197,7 +298,7 @@ export default function AdminFeesPage() {
 
   useEffect(() => {
     const sectionQuery = searchParams.get('section');
-    if (sectionQuery === 'structure' || sectionQuery === 'students' || sectionQuery === 'pending' || sectionQuery === 'paid') {
+    if (sectionQuery === 'structure' || sectionQuery === 'students' || sectionQuery === 'pending' || sectionQuery === 'paid' || sectionQuery === 'overdue') {
       setSection(sectionQuery);
     }
   }, [searchParams]);
@@ -208,6 +309,14 @@ export default function AdminFeesPage() {
     }
 
     setError(null);
+    if (section === 'overdue') {
+      void loadOverdue().catch((err) => {
+        setError(err instanceof Error ? err.message : 'Failed to load overdue fee list');
+        setLoadingOverdue(false);
+      });
+      return;
+    }
+
     void loadStudents(viewForSection).catch((err) => {
       setError(err instanceof Error ? err.message : 'Failed to load student fee list');
       setLoadingStudents(false);
@@ -218,10 +327,15 @@ export default function AdminFeesPage() {
   async function onApplyFilter() {
     setError(null);
     try {
-      await loadStudents(viewForSection);
+      if (section === 'overdue') {
+        await loadOverdue();
+      } else {
+        await loadStudents(viewForSection);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to apply filters');
       setLoadingStudents(false);
+      setLoadingOverdue(false);
     }
   }
 
@@ -230,10 +344,91 @@ export default function AdminFeesPage() {
     setStreamFilter(streamValue);
     setError(null);
     try {
-      await loadStudents(viewForSection, { classValue, streamValue });
+      if (section === 'overdue') {
+        await loadOverdue({ classValue, streamValue });
+      } else {
+        await loadStudents(viewForSection, { classValue, streamValue });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to filter student list');
       setLoadingStudents(false);
+      setLoadingOverdue(false);
+    }
+  }
+
+
+  async function onSendOverdueReminder(studentId: string, studentName: string) {
+    setError(null);
+    setSuccessMessage(null);
+    setSendingReminderStudentId(studentId);
+    try {
+      const message = overdueReminderMessage.trim();
+      await apiRequest('/api/v1/admin/fees/reminders/overdue', {
+        method: 'POST',
+        body: JSON.stringify({
+          student_ids: [studentId],
+          message: message.length > 0 ? message : null,
+        }),
+      });
+      setSuccessMessage(`Reminder sent to ${studentName}.`);
+      await Promise.all([loadSummary(), section === 'overdue' ? loadOverdue() : loadStudents(viewForSection)]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send overdue reminder');
+    } finally {
+      setSendingReminderStudentId(null);
+    }
+  }
+
+
+
+  async function onSendAllOverdueReminders() {
+    setError(null);
+    setSuccessMessage(null);
+    const studentIds = overdueStudents.map((row) => row.student_id);
+    if (studentIds.length === 0) {
+      setError('No overdue students found for reminder.');
+      return;
+    }
+
+    const ok = window.confirm(`Send reminder to ${studentIds.length} overdue students?`);
+    if (!ok) {
+      return;
+    }
+
+    try {
+      const message = overdueReminderMessage.trim();
+      await apiRequest('/api/v1/admin/fees/reminders/overdue', {
+        method: 'POST',
+        body: JSON.stringify({
+          student_ids: studentIds,
+          message: message.length > 0 ? message : null,
+        }),
+      });
+      setSuccessMessage(`Reminder sent to ${studentIds.length} overdue students.`);
+      await Promise.all([loadSummary(), loadOverdue()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send overdue reminders');
+    }
+  }
+
+  async function onPrintReceipt(studentId: string, hasAssignment: boolean) {
+    if (!hasAssignment) {
+      setError('Assign fee structure first, then print receipt.');
+      return;
+    }
+
+    setPrintingStudentId(studentId);
+    setError(null);
+    try {
+      const response = await apiRequest<ReceiptFetchResponse>(
+        `/api/v1/admin/fees/students/${studentId}/receipt/latest?regenerate=true`,
+      );
+      const href = `${API_BASE_URL}${response.receipt.download_url}`;
+      window.open(href, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate/print receipt');
+    } finally {
+      setPrintingStudentId(null);
     }
   }
 
@@ -320,11 +515,12 @@ export default function AdminFeesPage() {
       <div className={styles.headerRow}>
         <div>
           <h1 className={styles.title}>Fee Management</h1>
-          <p className={styles.subtitle}>Structured fee operations for Student List, Pending and Paid flows.</p>
+          <p className={styles.subtitle}>Structured fee operations for Student List, Pending, Paid and Overdue reminder workflows.</p>
         </div>
       </div>
 
       {error ? <p className={styles.error}>{error}</p> : null}
+      {successMessage ? <p className={styles.subtitle}>{successMessage}</p> : null}
 
       <div className={styles.summaryGrid}>
         {cards.map((card) => (
@@ -530,11 +726,116 @@ export default function AdminFeesPage() {
             <button className={styles.btnPrimary} type="button" onClick={onApplyFilter}>
               Apply Filters
             </button>
+
+            {section === 'overdue' ? (
+              <label className={styles.field} style={{ marginTop: 12 }}>
+                <span className={styles.fieldLabel}>Overdue reminder message (optional)</span>
+                <textarea
+                  className={styles.textarea}
+                  rows={2}
+                  value={overdueReminderMessage}
+                  onChange={(e) => setOverdueReminderMessage(e.target.value)}
+                  placeholder="You missed your fee payment. Please pay as soon as possible."
+                />
+              </label>
+            ) : null}
           </div>
 
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>{SECTION_LABELS[section]}</h3>
-            {loadingStudents ? (
+
+            {section === 'overdue' ? (
+              <>
+                <div className={styles.buttonRow} style={{ marginBottom: 12 }}>
+                  <button className={styles.btnPrimary} type="button" onClick={onSendAllOverdueReminders} disabled={overdueStudents.length === 0}>
+                    Send Reminder to All Overdue
+                  </button>
+                </div>
+
+                {loadingOverdue ? (
+                  <p className={styles.muted}>Loading overdue students...</p>
+                ) : (
+                  <div className={styles.tableWrap}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Student Name</th>
+                          <th>View</th>
+                          <th>Class</th>
+                          <th>Stream</th>
+                          <th>Parents Number</th>
+                          <th>Overdue Amount</th>
+                          <th>Overdue Installments</th>
+                          <th>Days Overdue</th>
+                          <th>Due Window</th>
+                          <th>Reminder</th>
+                          <th>Last Reminder</th>
+                          <th>Invoice Details</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {overdueStudents.map((row) => (
+                          <tr key={row.student_id}>
+                            <td>
+                              <div style={{ fontWeight: 700 }}>{row.full_name}</div>
+                              <div className={styles.muted} style={{ fontSize: 12 }}>{row.phone ?? '-'}</div>
+                            </td>
+                            <td>
+                              <Link className={styles.btnLink} href={`/admin/fees/students/${row.student_id}?section=overdue`}>
+                                View
+                              </Link>
+                            </td>
+                            <td>{row.class_name ?? '-'}</td>
+                            <td>{row.stream || '-'}</td>
+                            <td>{row.parent_contact_number ?? '-'}</td>
+                            <td>{currency(row.overdue_amount)}</td>
+                            <td>{row.overdue_installments}</td>
+                            <td>{row.days_overdue}</td>
+                            <td>
+                              <div>{formatDate(row.earliest_due_date)}</div>
+                              <div className={styles.muted} style={{ fontSize: 12 }}>to {formatDate(row.latest_due_date)}</div>
+                            </td>
+                            <td>
+                              <button
+                                className={styles.btnSecondary}
+                                type="button"
+                                disabled={sendingReminderStudentId === row.student_id}
+                                onClick={() => onSendOverdueReminder(row.student_id, row.full_name)}
+                              >
+                                {sendingReminderStudentId === row.student_id ? 'Sending...' : 'Send Reminder'}
+                              </button>
+                            </td>
+                            <td>{formatDate(row.last_reminder_sent_at)}</td>
+                            <td>
+                              <div className={styles.invoiceStack}>
+                                {row.invoices.map((invoice) => (
+                                  <div key={invoice.invoice_id} className={styles.invoiceItem}>
+                                    <div>
+                                      <strong>{invoice.invoice_no}</strong>
+                                      <span className={styles.muted}> • Inst {invoice.installment_no ?? '-'}</span>
+                                    </div>
+                                    <div className={styles.muted}>
+                                      Due {formatDate(invoice.due_date)} • {invoice.days_overdue}d • Bal {currency(invoice.balance_amount)}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {overdueStudents.length === 0 ? (
+                          <tr>
+                            <td colSpan={12} className={styles.muted}>
+                              No overdue students found for this filter.
+                            </td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            ) : loadingStudents ? (
               <p className={styles.muted}>Loading...</p>
             ) : (
               <div className={styles.tableWrap}>
@@ -550,7 +851,9 @@ export default function AdminFeesPage() {
                       <th>Paid</th>
                       <th>Pending</th>
                       <th>Installments</th>
+                      <th>Next Due</th>
                       <th>Update</th>
+                      <th>Receipt</th>
                       <th>Assigned</th>
                       {showFullPaidColumn ? <th>Full Paid</th> : null}
                     </tr>
@@ -576,10 +879,21 @@ export default function AdminFeesPage() {
                             ? `${row.installments_paid_count}/${row.installment_target_count}`
                             : `${row.installments_paid_count}/-`}
                         </td>
+                        <td>{formatDate(row.next_due_date)}</td>
                         <td>
                           <Link className={styles.btnLink} href={`/admin/fees/students/${row.student_id}?section=${section}`}>
                             Update
                           </Link>
+                        </td>
+                        <td>
+                          <button
+                            className={styles.btnNeutral}
+                            type="button"
+                            disabled={printingStudentId === row.student_id || !row.fee_structure_assigned}
+                            onClick={() => onPrintReceipt(row.student_id, row.fee_structure_assigned)}
+                          >
+                            {printingStudentId === row.student_id ? 'Printing...' : 'Print Receipt'}
+                          </button>
                         </td>
                         <td>
                           {row.fee_structure_assigned ? (
@@ -601,7 +915,7 @@ export default function AdminFeesPage() {
                     ))}
                     {students.length === 0 ? (
                       <tr>
-                        <td colSpan={showFullPaidColumn ? 12 : 11} className={styles.muted}>
+                        <td colSpan={showFullPaidColumn ? 14 : 13} className={styles.muted}>
                           No students found for this section.
                         </td>
                       </tr>

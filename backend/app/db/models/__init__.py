@@ -12,6 +12,8 @@ from app.db.models.academic import (
     SubjectAcademicScope,
     TeacherBatchAssignment,
     TeacherProfile,
+    TeacherSalaryLedger,
+    TeacherSalaryProfile,
 )
 from app.db.models.assessment import (
     Assessment,
@@ -26,6 +28,7 @@ from app.db.models.audit import AuditLog, IdempotencyKey, OutboxEvent
 from app.db.models.billing import FeeInvoice, FeeStructure, PaymentTransaction, StudentFeeStructureAssignment
 from app.db.models.content import Banner, DailyThought, Notice, NoticeAttachment, NoticeRead, NoticeTarget
 from app.db.models.doubt import Doubt, DoubtMessage
+from app.db.models.enquiry import StudentEnquiry, StudentEnquiryStatusHistory
 from app.db.models.homework import (
     Homework,
     HomeworkAttachment,
@@ -38,7 +41,8 @@ from app.db.models.notification import Notification, NotificationDelivery
 from app.db.models.parent import ParentCommunicationPreference, ParentProfile, ParentStudentLink
 from app.db.models.registration import RegistrationRequest
 from app.db.models.results import Result, StudentProgressSnapshot
-from app.db.models.user import DeviceRegistration, RefreshSession, Role, User, UserRole
+from app.db.models.suggestion import SuggestionMessage, SuggestionThread
+from app.db.models.user import DeviceRegistration, RefreshSession, Role, StudentCredential, TeacherCredential, User, UserRole
 
 __all__ = [
     "Assessment",
@@ -88,11 +92,19 @@ __all__ = [
     "Role",
     "Standard",
     "StudentBatchEnrollment",
+    "StudentCredential",
+    "StudentEnquiry",
+    "StudentEnquiryStatusHistory",
     "StudentProfile",
     "StudentProgressSnapshot",
+    "SuggestionMessage",
+    "SuggestionThread",
     "Subject",
     "SubjectAcademicScope",
     "TeacherBatchAssignment",
+    "TeacherCredential",
+    "TeacherSalaryLedger",
+    "TeacherSalaryProfile",
     "TeacherProfile",
     "User",
     "UserRole",

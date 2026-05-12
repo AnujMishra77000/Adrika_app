@@ -1,4 +1,5 @@
 from celery import Celery
+from kombu import Queue
 
 from app.core.config import get_settings
 
@@ -16,13 +17,20 @@ celery_app = Celery(
 )
 
 celery_app.conf.update(
-    timezone="UTC",
+    timezone=settings.app_timezone,
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
     task_acks_late=True,
     worker_prefetch_multiplier=1,
     task_default_retry_delay=30,
+    task_default_queue="integrations",
+    task_queues=(
+        Queue("notifications_bulk"),
+        Queue("integrations"),
+        Queue("assessments"),
+    ),
+    task_create_missing_queues=False,
     task_routes={
         "app.workers.tasks_notifications.*": {"queue": "notifications_bulk"},
         "app.workers.tasks_outbox.*": {"queue": "integrations"},

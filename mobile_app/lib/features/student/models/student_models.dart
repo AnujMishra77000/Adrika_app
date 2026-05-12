@@ -40,6 +40,8 @@ class StudentProfile {
   final String fullName;
   final String admissionNo;
   final String rollNo;
+  final String? className;
+  final String? stream;
   final String? photoUrl;
 
   const StudentProfile({
@@ -48,6 +50,8 @@ class StudentProfile {
     required this.fullName,
     required this.admissionNo,
     required this.rollNo,
+    this.className,
+    this.stream,
     this.photoUrl,
   });
 
@@ -62,6 +66,28 @@ class StudentProfile {
       fullName: json['full_name']?.toString() ?? '',
       admissionNo: json['admission_no']?.toString() ?? '',
       rollNo: json['roll_no']?.toString() ?? '',
+      className: _toStringValue(
+        json['class_name'] ??
+            json['class'] ??
+            json['standard'] ??
+            json['batch_name'],
+      ).trim().isEmpty
+          ? null
+          : _toStringValue(
+              json['class_name'] ??
+                  json['class'] ??
+                  json['standard'] ??
+                  json['batch_name'],
+            ).trim(),
+      stream: _toStringValue(
+        json['stream'] ?? json['academic_stream'] ?? json['current_stream'],
+      ).trim().isEmpty
+          ? null
+          : _toStringValue(
+              json['stream'] ??
+                  json['academic_stream'] ??
+                  json['current_stream'],
+            ).trim(),
       photoUrl: photo.isEmpty ? null : photo,
     );
   }
@@ -72,12 +98,18 @@ class StudentDashboard {
   final int pendingHomeworkCount;
   final double attendancePercentage;
   final int upcomingTestsCount;
+  final String serverTimezone;
+  final DateTime? serverNowIst;
+  final int? serverMinuteOfDay;
 
   const StudentDashboard({
     required this.unreadNotifications,
     required this.pendingHomeworkCount,
     required this.attendancePercentage,
     required this.upcomingTestsCount,
+    required this.serverTimezone,
+    required this.serverNowIst,
+    required this.serverMinuteOfDay,
   });
 
   factory StudentDashboard.fromJson(Map<String, dynamic> json) {
@@ -86,6 +118,14 @@ class StudentDashboard {
       pendingHomeworkCount: _toNum(json['pending_homework_count']).toInt(),
       attendancePercentage: _toNum(json['attendance_percentage']).toDouble(),
       upcomingTestsCount: _toNum(json['upcoming_tests_count']).toInt(),
+      serverTimezone: _toStringValue(
+        json['server_timezone'],
+        fallback: 'Asia/Kolkata',
+      ),
+      serverNowIst: _toDate(json['server_now_ist']),
+      serverMinuteOfDay: json['server_minute_of_day'] == null
+          ? null
+          : _toNum(json['server_minute_of_day']).toInt(),
     );
   }
 }
@@ -294,6 +334,8 @@ class StudentHomework {
   final String id;
   final String title;
   final String description;
+  final String subjectId;
+  final String? subjectName;
   final String dueDate;
   final DateTime? dueAt;
   final DateTime? expiresAt;
@@ -308,6 +350,8 @@ class StudentHomework {
     required this.id,
     required this.title,
     required this.description,
+    required this.subjectId,
+    required this.subjectName,
     required this.dueDate,
     required this.dueAt,
     required this.expiresAt,
@@ -330,6 +374,10 @@ class StudentHomework {
       id: _toStringValue(json['id']),
       title: _toStringValue(json['title']),
       description: _toStringValue(json['description']),
+      subjectId: _toStringValue(json['subject_id']),
+      subjectName: _toStringValue(json['subject_name']).trim().isEmpty
+          ? null
+          : _toStringValue(json['subject_name']).trim(),
       dueDate: _toStringValue(json['due_date']),
       dueAt: _toDate(json['due_at']),
       expiresAt: _toDate(json['expires_at']),
@@ -460,6 +508,33 @@ class StudentAnnouncementItem {
   }
 }
 
+class StudentContentBanner {
+  final String id;
+  final String title;
+  final String mediaUrl;
+  final String? actionUrl;
+  final int priority;
+
+  const StudentContentBanner({
+    required this.id,
+    required this.title,
+    required this.mediaUrl,
+    required this.actionUrl,
+    required this.priority,
+  });
+
+  factory StudentContentBanner.fromJson(Map<String, dynamic> json) {
+    final action = _toStringValue(json['action_url']).trim();
+    return StudentContentBanner(
+      id: _toStringValue(json['id']),
+      title: _toStringValue(json['title'], fallback: 'Banner'),
+      mediaUrl: _toStringValue(json['media_url']),
+      actionUrl: action.isEmpty ? null : action,
+      priority: _toNum(json['priority']).toInt(),
+    );
+  }
+}
+
 class StudentLectureSummary {
   final String title;
   final String primaryValue;
@@ -485,6 +560,7 @@ class StudentScheduledLecture {
   final String topic;
   final String lectureNotes;
   final DateTime? scheduledAt;
+  final int durationMinutes;
   final String status;
   final DateTime? completedAt;
 
@@ -499,6 +575,7 @@ class StudentScheduledLecture {
     required this.topic,
     required this.lectureNotes,
     required this.scheduledAt,
+    required this.durationMinutes,
     required this.status,
     required this.completedAt,
   });
@@ -515,12 +592,12 @@ class StudentScheduledLecture {
       topic: _toStringValue(json['topic']),
       lectureNotes: _toStringValue(json['lecture_notes']),
       scheduledAt: _toDate(json['scheduled_at']),
+      durationMinutes: _toNum(json['duration_minutes']).toInt(),
       status: _toStringValue(json['status'], fallback: 'scheduled'),
       completedAt: _toDate(json['completed_at']),
     );
   }
 }
-
 
 class StudentPracticeTestSummary {
   final int availableCount;
@@ -537,11 +614,17 @@ class StudentPracticeTestSummary {
 class StudentProgressSummary {
   final double attendancePercent;
   final double scorePercent;
+  final double weeklyScorePercent;
+  final double overallScorePercent;
+  final int completedTestsCount;
   final String trendLabel;
 
   const StudentProgressSummary({
     required this.attendancePercent,
     required this.scorePercent,
+    required this.weeklyScorePercent,
+    required this.overallScorePercent,
+    required this.completedTestsCount,
     required this.trendLabel,
   });
 }
@@ -646,6 +729,7 @@ class StudentTodayScheduleItem {
 class StudentHomeSummary {
   final StudentProfile profile;
   final StudentDashboard dashboard;
+  final List<StudentContentBanner> banners;
   final List<StudentNotificationItem> notifications;
   final List<StudentScheduledLecture> scheduledLectures;
   final List<StudentAnnouncementItem> announcements;
@@ -658,10 +742,14 @@ class StudentHomeSummary {
   final List<StudentQuickActionItem> quickActions;
   final List<StudentTodayScheduleItem> todaySchedule;
   final StudentDoubtCtaData doubtCta;
+  final int serverMinuteOfDay;
+  final DateTime serverSyncedAt;
+  final String serverTimezone;
 
   const StudentHomeSummary({
     required this.profile,
     required this.dashboard,
+    required this.banners,
     required this.notifications,
     required this.scheduledLectures,
     required this.announcements,
@@ -674,14 +762,13 @@ class StudentHomeSummary {
     required this.quickActions,
     required this.todaySchedule,
     required this.doubtCta,
+    required this.serverMinuteOfDay,
+    required this.serverSyncedAt,
+    required this.serverTimezone,
   });
 
   int get unreadNotificationCount {
-    final unreadFromList = notifications.where((item) => !item.isRead).length;
-    if (unreadFromList > 0) {
-      return unreadFromList;
-    }
-    return dashboard.unreadNotifications;
+    return notifications.where((item) => !item.isRead).length;
   }
 }
 
@@ -796,14 +883,95 @@ class StudentDoubtThreadDetail {
   });
 
   factory StudentDoubtThreadDetail.fromJson(Map<String, dynamic> json) {
-    final doubtRaw = json['doubt'] as Map<String, dynamic>? ?? const <String, dynamic>{};
+    final doubtRaw =
+        json['doubt'] as Map<String, dynamic>? ?? const <String, dynamic>{};
     final messagesRaw = json['messages'] as List<dynamic>? ?? const <dynamic>[];
 
     return StudentDoubtThreadDetail(
       doubt: StudentDoubtThreadSummary.fromJson(doubtRaw),
       description: _toStringValue(doubtRaw['description']),
       messages: messagesRaw
-          .map((item) => StudentDoubtMessage.fromJson(item as Map<String, dynamic>))
+          .map((item) =>
+              StudentDoubtMessage.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+    );
+  }
+}
+
+class StudentSuggestionThreadSummary {
+  final String id;
+  final String studentId;
+  final String studentName;
+  final String status;
+  final DateTime? lastMessageAt;
+
+  const StudentSuggestionThreadSummary({
+    required this.id,
+    required this.studentId,
+    required this.studentName,
+    required this.status,
+    required this.lastMessageAt,
+  });
+
+  factory StudentSuggestionThreadSummary.fromJson(Map<String, dynamic> json) {
+    return StudentSuggestionThreadSummary(
+      id: _toStringValue(json['id']),
+      studentId: _toStringValue(json['student_id']),
+      studentName: _toStringValue(json['student_name'], fallback: 'Student'),
+      status: _toStringValue(json['status'], fallback: 'open'),
+      lastMessageAt: _toDate(json['last_message_at']),
+    );
+  }
+}
+
+class StudentSuggestionMessage {
+  final String id;
+  final String threadId;
+  final String senderUserId;
+  final String senderName;
+  final String message;
+  final DateTime? createdAt;
+
+  const StudentSuggestionMessage({
+    required this.id,
+    required this.threadId,
+    required this.senderUserId,
+    required this.senderName,
+    required this.message,
+    required this.createdAt,
+  });
+
+  factory StudentSuggestionMessage.fromJson(Map<String, dynamic> json) {
+    return StudentSuggestionMessage(
+      id: _toStringValue(json['id']),
+      threadId: _toStringValue(json['thread_id']),
+      senderUserId: _toStringValue(json['sender_user_id']),
+      senderName: _toStringValue(json['sender_name'], fallback: 'Unknown'),
+      message: _toStringValue(json['message']),
+      createdAt: _toDate(json['created_at']),
+    );
+  }
+}
+
+class StudentSuggestionThreadDetail {
+  final StudentSuggestionThreadSummary thread;
+  final List<StudentSuggestionMessage> messages;
+
+  const StudentSuggestionThreadDetail({
+    required this.thread,
+    required this.messages,
+  });
+
+  factory StudentSuggestionThreadDetail.fromJson(Map<String, dynamic> json) {
+    final threadRaw =
+        json['thread'] as Map<String, dynamic>? ?? const <String, dynamic>{};
+    final messagesRaw = json['items'] as List<dynamic>? ?? const <dynamic>[];
+
+    return StudentSuggestionThreadDetail(
+      thread: StudentSuggestionThreadSummary.fromJson(threadRaw),
+      messages: messagesRaw
+          .map((item) =>
+              StudentSuggestionMessage.fromJson(item as Map<String, dynamic>))
           .toList(growable: false),
     );
   }

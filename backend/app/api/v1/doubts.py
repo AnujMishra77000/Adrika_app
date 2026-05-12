@@ -121,6 +121,7 @@ async def detail(
 async def list_messages(
     doubt_id: str,
     since: datetime | None = Query(default=None),
+    since_id: str | None = Query(default=None),
     session: AsyncSession = Depends(get_db_session),
     cache: Redis = Depends(get_redis),
     student_profile=Depends(get_current_student_profile),
@@ -129,6 +130,7 @@ async def list_messages(
         student_id=student_profile.id,
         doubt_id=doubt_id,
         since=since,
+        since_id=since_id,
     )
     return {"items": items}
 

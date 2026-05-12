@@ -76,7 +76,7 @@ class AdminHomeworkService:
     @staticmethod
     def _extract_grade(class_name: str | None, standard_name: str | None) -> int | None:
         source = f"{class_name or ''} {standard_name or ''}".lower()
-        match = re.search(r"(10|11|12)", source)
+        match = re.search(r"(6|7|8|9|10|11|12)", source)
         if not match:
             return None
         return int(match.group(1))
@@ -104,7 +104,7 @@ class AdminHomeworkService:
                 grade = int(grade_raw)
             except ValueError:
                 return None, None
-            if grade not in {10, 11, 12}:
+            if grade not in {6, 7, 8, 9, 10, 11, 12}:
                 return None, None
             return grade, cls._normalize_stream(stream_raw)
 
@@ -112,7 +112,7 @@ class AdminHomeworkService:
             grade = int(raw)
         except ValueError:
             return None, None
-        if grade not in {10, 11, 12}:
+        if grade not in {6, 7, 8, 9, 10, 11, 12}:
             return None, None
         return grade, None
 

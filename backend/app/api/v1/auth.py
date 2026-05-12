@@ -1,101 +1,119 @@
-from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
+from app.core.config import get_settings
 from app.db.session import get_db_session
-from app.schemas.auth import LoginRequestDTO, LoginResponseDTO, RefreshRequestDTO, TokenPairDTO
-from app.schemas.registration import RegistrationResponseDTO, StudentRegistrationDTO, TeacherRegistrationDTO
+from app.schemas.auth import (
+    ForgotPasswordResetRequestDTO,
+    LoginRequestDTO,
+    LoginResponseDTO,
+    RefreshRequestDTO,
+    TokenPairDTO,
+)
+from app.schemas.registration import RegistrationResponseDTO, TeacherRegistrationDTO
 from app.services.auth_service import AuthService
 from app.services.registration_service import RegistrationService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+settings = get_settings()
+
+
+def _set_access_token_cookie(response: Response, access_token: str) -> None:
+    response.set_cookie(
+        key=settings.access_token_cookie_name,
+        value=access_token,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="lax",
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
+    )
+
+
+def _clear_access_token_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=settings.access_token_cookie_name,
+        path="/",
+        secure=settings.is_production,
+        samesite="lax",
+    )
 
 
 @router.post("/login", response_model=LoginResponseDTO)
-async def login(payload: LoginRequestDTO, session: AsyncSession = Depends(get_db_session)) -> LoginResponseDTO:
+async def login(
+    payload: LoginRequestDTO,
+    response: Response,
+    session: AsyncSession = Depends(get_db_session),
+) -> LoginResponseDTO:
     service = AuthService(session)
-    return await service.login(
+    result = await service.login(
         identifier=payload.identifier,
         password=payload.password,
         device_id=payload.device.device_id,
     )
+    _set_access_token_cookie(response, result.tokens.access_token)
+    return result
 
 
 @router.post("/register/student", response_model=RegistrationResponseDTO, status_code=status.HTTP_201_CREATED)
-async def register_student(
-    name: str = Form(...),
-    class_name: str = Form(...),
-    stream: str = Form(...),
-    contact_number: str = Form(...),
-    password: str = Form(...),
-    confirm_password: str = Form(...),
-    parent_contact_number: str = Form(...),
-    address: str = Form(...),
-    school_details: str = Form(...),
-    photo: UploadFile | None = File(default=None),
-    session: AsyncSession = Depends(get_db_session),
-) -> RegistrationResponseDTO:
-    payload = StudentRegistrationDTO(
-        name=name,
-        class_name=class_name,
-        stream=stream,
-        contact_number=contact_number,
-        password=password,
-        confirm_password=confirm_password,
-        parent_contact_number=parent_contact_number,
-        address=address,
-        school_details=school_details,
+async def register_student() -> RegistrationResponseDTO:
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Student self-registration is disabled. Please contact admin for your login credentials.",
     )
-    return await RegistrationService(session).register_student(payload=payload, photo=photo)
 
 
 @router.post("/register/teacher", response_model=RegistrationResponseDTO, status_code=status.HTTP_201_CREATED)
-async def register_teacher(
-    name: str = Form(...),
-    age: int = Form(...),
-    gender: str = Form(...),
-    qualification: str = Form(...),
-    specialization: str = Form(...),
-    school_college: str | None = Form(default=None),
-    contact_number: str = Form(...),
-    password: str = Form(...),
-    confirm_password: str = Form(...),
-    address: str = Form(...),
-    photo: UploadFile | None = File(default=None),
-    session: AsyncSession = Depends(get_db_session),
-) -> RegistrationResponseDTO:
-    payload = TeacherRegistrationDTO(
-        name=name,
-        age=age,
-        gender=gender,
-        qualification=qualification,
-        specialization=specialization,
-        school_college=school_college,
-        contact_number=contact_number,
-        password=password,
-        confirm_password=confirm_password,
-        address=address,
+async def register_teacher() -> RegistrationResponseDTO:
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Teacher self-registration is disabled. Please contact admin for your login credentials.",
     )
-    return await RegistrationService(session).register_teacher(payload=payload, photo=photo)
+
+
+@router.post("/forgot-password/reset")
+async def forgot_password_reset(
+    payload: ForgotPasswordResetRequestDTO,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await AuthService(session).reset_password_by_phone(
+        phone=payload.phone,
+        new_password=payload.new_password,
+        role=payload.role,
+    )
 
 
 @router.post("/refresh", response_model=TokenPairDTO)
-async def refresh(payload: RefreshRequestDTO, session: AsyncSession = Depends(get_db_session)) -> TokenPairDTO:
-    return await AuthService(session).refresh(refresh_token=payload.refresh_token)
+async def refresh(
+    payload: RefreshRequestDTO,
+    response: Response,
+    session: AsyncSession = Depends(get_db_session),
+) -> TokenPairDTO:
+    result = await AuthService(session).refresh(refresh_token=payload.refresh_token)
+    _set_access_token_cookie(response, result.access_token)
+    return result
 
 
 @router.post("/logout")
-async def logout(payload: RefreshRequestDTO, session: AsyncSession = Depends(get_db_session)) -> dict:
+async def logout(
+    payload: RefreshRequestDTO,
+    response: Response,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
     await AuthService(session).logout(refresh_token=payload.refresh_token)
+    _clear_access_token_cookie(response)
     return {"message": "Logged out"}
 
 
 @router.post("/logout-all")
 async def logout_all(
+    response: Response,
     session: AsyncSession = Depends(get_db_session),
     current_user=Depends(get_current_user),
 ) -> dict:
     await AuthService(session).logout_all(user_id=current_user.id)
+    _clear_access_token_cookie(response)
     return {"message": "All sessions revoked"}
 
 

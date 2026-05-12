@@ -18,3 +18,4 @@ async def test_login_success(client: AsyncClient) -> None:
     assert "tokens" in body
     assert "access_token" in body["tokens"]
     assert "refresh_token" in body["tokens"]
+    assert "adr_access_token" in response.cookies

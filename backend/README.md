@@ -24,9 +24,9 @@ FastAPI modular monolith for coaching institute automation.
 ## Workers
 
 - Celery worker:
-  - `celery -A app.workers.celery_app.celery_app worker -l info`
+  - `celery -A app.workers.celery_app:celery_app worker -l info -Q notifications_bulk,integrations,assessments`
 - Celery beat:
-  - `celery -A app.workers.celery_app.celery_app beat -l info`
+  - `celery -A app.workers.celery_app:celery_app beat -l info`
 
 ## Default seeded users
 
@@ -39,3 +39,10 @@ FastAPI modular monolith for coaching institute automation.
 
 - `GET /health/live`
 - `GET /health/ready`
+
+## Firebase push verification
+
+1. Configure `FCM_PROJECT_ID` and `FCM_CREDENTIALS_PATH` in `.env`.
+2. Place Android `google-services.json` at `mobile_app/android/app/google-services.json`.
+3. Run:
+   - `python -m app.scripts.verify_push_setup`

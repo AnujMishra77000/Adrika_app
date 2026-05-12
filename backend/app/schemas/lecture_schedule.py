@@ -10,6 +10,7 @@ class AdminLectureScheduleCreateDTO(BaseModel):
     teacher_id: str
     topic: str = Field(min_length=2, max_length=255)
     lecture_notes: str | None = Field(default=None, max_length=5000)
+    duration_minutes: int = Field(default=60, ge=15, le=300)
     scheduled_at: datetime
     student_ids: list[str] | None = None
     all_students_in_scope: bool = True

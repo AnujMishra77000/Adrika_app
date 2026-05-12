@@ -1,13 +1,11 @@
 .root {
   min-height: calc(100vh - 48px);
-  background:
-    radial-gradient(1100px 420px at 10% -18%, rgba(248, 206, 92, 0.2), transparent 54%),
-    radial-gradient(920px 460px at 92% -15%, rgba(82, 156, 255, 0.24), transparent 58%),
-    linear-gradient(145deg, #171034 0%, #0f1f45 54%, #12315d 100%);
+  background: linear-gradient(180deg, #fbf8ff 0%, #f3ecff 100%);
+  border: 1px solid #ddcff8;
   border-radius: 20px;
   padding: 22px;
-  color: #f8faff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 45px rgba(9, 8, 32, 0.35);
+  color: #27174d;
+  box-shadow: 0 8px 22px rgba(80, 49, 141, 0.08);
 }
 
 .headerRow {
@@ -22,13 +20,13 @@
   margin: 0;
   font-size: 33px;
   line-height: 1.12;
-  color: #fffef7;
+  color: #27174d;
 }
 
 .subtitle {
   margin-top: 8px;
   margin-bottom: 0;
-  color: rgba(232, 239, 255, 0.84);
+  color: #6f5f94;
   font-size: 14px;
 }
 

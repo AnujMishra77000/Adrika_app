@@ -1,0 +1,54 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 937 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+50 800 Td
+(Adrika Smart Institute) Tj
+T* (Student Fee Receipt) Tj
+T* (Student: Demo Student) Tj
+T* (Class/Stream: Class 10 / general science) Tj
+T* (Contact: 9999990001) Tj
+T* (Parent WhatsApp: -) Tj
+T* (Fee Structure: 10th standard fee structure) Tj
+T* (Generated At \(UTC\): 2026-05-05T09:09:45.911432+00:00) Tj
+T* (Total Fee: INR 30,000.00) Tj
+T* (Total Paid: INR 30,000.00) Tj
+T* (Pending: INR 0.00) Tj
+T* (Installments Paid: 3/2) Tj
+T* (Installment Ledger:) Tj
+T* (1. Inst #- | Invoice INV-1001 | INR 2,000.00 | Manual | Ref demo_pay_001 | 2026-04-03T10:27:21.525281) Tj
+T* (2. Inst #2 | Invoice FEE-20260415100801-DFAA-08E562 | INR 24,000.00 | Cash | Ref - | 2026-04-15T00:00:00) Tj
+T* (3. Inst #3 | Invoice FEE-20260505090945-DFAA-2F7A58 | INR 4,000.00 | Cash | Ref FEE-20260505090945-DFAA-2F7A58 | 2026-05-05T00:00:00+00:00) Tj
+T* (Receipt Download: /media/receipts/FEE-RECEIPT-DFAA37-20260505090945.pdf) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000247 00000 n 
+0000000317 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1305
+%%EOF

@@ -1,0 +1,320 @@
+.operationsRoot {
+  padding: 14px;
+}
+
+.pageTitle {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.pageSubtitle {
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+.navGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(152px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.navCard {
+  min-height: 74px;
+  border-radius: 12px;
+  border: 1px solid rgba(166, 135, 230, 0.78);
+  background: linear-gradient(135deg, #f2e9ff 0%, #e6d8ff 100%);
+  box-shadow: 0 10px 20px rgba(84, 52, 138, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.navCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(147, 110, 220, 0.9);
+  box-shadow: 0 14px 30px rgba(84, 52, 138, 0.24);
+}
+
+.navTitle {
+  margin: 0;
+  color: #452178;
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.sectionStack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sectionHeading {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.createStudentCard {
+  padding: 14px;
+}
+
+.createStudentForm {
+  display: grid;
+  gap: 10px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px 10px;
+}
+
+.feeSetupBox {
+  margin-top: 4px;
+  margin-bottom: 6px;
+  border: 1px solid #ddd1f8;
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(80, 49, 141, 0.08);
+}
+
+.feeSetupTitle {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #4a2f97;
+}
+
+.directoryCard {
+  padding: 14px;
+}
+
+.directoryToolbar {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filterRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.searchField {
+  max-width: 420px;
+}
+
+.directoryTableWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.directoryTable {
+  min-width: 980px;
+}
+
+.nameCell {
+  font-weight: 600;
+}
+
+.subText {
+  font-size: 12px;
+}
+
+.batchCell {
+  min-width: 220px;
+}
+
+.batchControls {
+  display: grid;
+  gap: 6px;
+}
+
+.batchSelect {
+  border: 1px solid #ddcff8;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  color: #27174d;
+  height: 36px;
+}
+
+.statusActionCell {
+  width: 136px;
+}
+
+.actionButton {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  height: 36px;
+  min-width: 124px;
+  padding: 0 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.purpleButton {
+  background: rgba(109, 40, 217, 0.18);
+  border-color: rgba(109, 40, 217, 0.48);
+  color: #4c1d95;
+}
+
+.purpleButton:hover {
+  background: rgba(109, 40, 217, 0.28);
+}
+
+.filterActive {
+  background: rgba(109, 40, 217, 0.34);
+  color: #452178;
+  border-color: rgba(109, 40, 217, 0.72);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  text-transform: capitalize;
+}
+
+.statusActive {
+  background: rgba(22, 163, 74, 0.18);
+  color: #166534;
+  border-color: rgba(22, 163, 74, 0.42);
+}
+
+.statusInactive {
+  background: rgba(220, 38, 38, 0.16);
+  color: #b91c1c;
+  border-color: rgba(220, 38, 38, 0.44);
+}
+
+.statusNeutral {
+  background: rgba(71, 85, 105, 0.14);
+  color: #334155;
+  border-color: rgba(71, 85, 105, 0.4);
+}
+
+.statusActionBase {
+  color: #ffffff;
+}
+
+.statusActionActive {
+  background: #16a34a;
+  border-color: #15803d;
+}
+
+.statusActionInactive {
+  background: #dc2626;
+  border-color: #b91c1c;
+}
+
+.statusActionNeutral {
+  background: #475569;
+  border-color: #334155;
+}
+
+.actionButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .navGrid {
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  }
+
+  .actionButton {
+    min-width: 114px;
+    height: 34px;
+  }
+}
+
+
+.cardTitle {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  color: #3a2760;
+}
+
+.feeFormGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.feeField {
+  display: grid;
+  gap: 6px;
+}
+
+.feeField span {
+  font-size: 0.8rem;
+  color: #604b8f;
+  font-weight: 600;
+}
+
+.feeField input,
+.feeField select,
+.feeField textarea {
+  border: 1px solid #dbcdf8;
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: #fff;
+}
+
+.fieldWide {
+  grid-column: span 2;
+}
+
+.infoStrip {
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #e1d5fb;
+  background: #f8f3ff;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #4f3c7a;
+}
+
+.actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+
+@media (max-width: 1200px) {
+  .feeFormGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .feeFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fieldWide {
+    grid-column: auto;
+  }
+}

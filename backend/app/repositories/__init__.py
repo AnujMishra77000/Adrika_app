@@ -9,6 +9,7 @@ from app.repositories.parent_repo import ParentRepository
 from app.repositories.registration_repo import RegistrationRepository
 from app.repositories.result_repo import ResultRepository
 from app.repositories.student_repo import StudentRepository
+from app.repositories.suggestion_repo import SuggestionRepository
 from app.repositories.teacher_repo import TeacherRepository
 from app.repositories.user_repo import UserRepository
 
@@ -25,5 +26,6 @@ __all__ = [
     "ResultRepository",
     "StudentRepository",
     "TeacherRepository",
+    "SuggestionRepository",
     "UserRepository",
 ]

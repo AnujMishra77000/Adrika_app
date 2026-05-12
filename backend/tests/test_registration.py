@@ -121,6 +121,7 @@ async def test_teacher_registration_rejected_cannot_login(client: AsyncClient) -
             "qualification": "MSc Mathematics",
             "specialization": "Algebra",
             "school_college": "City College",
+            "teaching": "11-science",
             "contact_number": phone,
             "password": "Teacher@123",
             "confirm_password": "Teacher@123",

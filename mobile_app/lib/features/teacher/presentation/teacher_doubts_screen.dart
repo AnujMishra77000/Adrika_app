@@ -183,9 +183,44 @@ class _TeacherDoubtThreadScreenState
   String? _error;
   Timer? _pollTimer;
   DateTime? _lastMessageAt;
+  String? _lastMessageId;
 
   String? get _token => ref.read(authControllerProvider).accessToken;
   String? get _currentUserId => ref.read(authControllerProvider).userId;
+
+  List<TeacherDoubtMessage> _sortedUniqueMessages(
+    Iterable<TeacherDoubtMessage> messages,
+  ) {
+    final map = <String, TeacherDoubtMessage>{};
+    for (final item in messages) {
+      if (item.id.isEmpty) {
+        continue;
+      }
+      map[item.id] = item;
+    }
+    final sorted = map.values.toList(growable: false)
+      ..sort((a, b) {
+        final aMs = a.createdAt?.millisecondsSinceEpoch ?? 0;
+        final bMs = b.createdAt?.millisecondsSinceEpoch ?? 0;
+        if (aMs != bMs) {
+          return aMs.compareTo(bMs);
+        }
+        return a.id.compareTo(b.id);
+      });
+    return sorted;
+  }
+
+  void _syncCursorFromMessages(List<TeacherDoubtMessage> messages) {
+    if (messages.isEmpty) {
+      _lastMessageAt = null;
+      _lastMessageId = null;
+      return;
+    }
+
+    final latest = messages.last;
+    _lastMessageAt = latest.createdAt?.toUtc();
+    _lastMessageId = latest.id;
+  }
 
   @override
   void initState() {
@@ -228,12 +263,7 @@ class _TeacherDoubtThreadScreenState
           );
       if (!mounted) return;
 
-      final sortedMessages = List<TeacherDoubtMessage>.from(detail.messages)
-        ..sort((a, b) {
-          final aMs = a.createdAt?.millisecondsSinceEpoch ?? 0;
-          final bMs = b.createdAt?.millisecondsSinceEpoch ?? 0;
-          return aMs.compareTo(bMs);
-        });
+      final sortedMessages = _sortedUniqueMessages(detail.messages);
 
       setState(() {
         _detail = TeacherDoubtDetail(
@@ -241,8 +271,7 @@ class _TeacherDoubtThreadScreenState
           description: detail.description,
           messages: sortedMessages,
         );
-        _lastMessageAt =
-            sortedMessages.isEmpty ? null : sortedMessages.last.createdAt?.toUtc();
+        _syncCursorFromMessages(sortedMessages);
         _error = null;
         _isLoading = false;
       });
@@ -266,26 +295,21 @@ class _TeacherDoubtThreadScreenState
             accessToken: token,
             doubtId: widget.doubtId,
             since: _lastMessageAt,
+            sinceId: _lastMessageId,
           );
       if (latest.isEmpty || !mounted) {
         return;
       }
 
       setState(() {
-        final merged = List<TeacherDoubtMessage>.from(_detail!.messages)
-          ..addAll(latest);
-        merged.sort((a, b) {
-          final aMs = a.createdAt?.millisecondsSinceEpoch ?? 0;
-          final bMs = b.createdAt?.millisecondsSinceEpoch ?? 0;
-          return aMs.compareTo(bMs);
-        });
+        final merged = _sortedUniqueMessages([..._detail!.messages, ...latest]);
 
         _detail = TeacherDoubtDetail(
           doubt: _detail!.doubt,
           description: _detail!.description,
           messages: merged,
         );
-        _lastMessageAt = merged.last.createdAt?.toUtc();
+        _syncCursorFromMessages(merged);
       });
     } catch (_) {
       // silent polling failure
@@ -325,12 +349,13 @@ class _TeacherDoubtThreadScreenState
 
       if (!mounted) return;
       setState(() {
+        final merged = _sortedUniqueMessages([..._detail!.messages, message]);
         _detail = TeacherDoubtDetail(
           doubt: _detail!.doubt,
           description: _detail!.description,
-          messages: [..._detail!.messages, message],
+          messages: merged,
         );
-        _lastMessageAt = message.createdAt?.toUtc() ?? _lastMessageAt;
+        _syncCursorFromMessages(merged);
         _messageController.clear();
       });
     } catch (error) {
@@ -574,7 +599,6 @@ class _TeacherDoubtThreadScreenState
                     const SizedBox(width: 8),
                     TeacherTapScale(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: _isSending ? null : _sendMessage,
                       child: FilledButton(
                         style: FilledButton.styleFrom(
                           backgroundColor: TeacherPalette.oceanBlue,

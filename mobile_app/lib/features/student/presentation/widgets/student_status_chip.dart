@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'student_home_palette.dart';
-
 enum StudentChipTone {
   neutral,
   success,
@@ -23,30 +21,30 @@ class StudentStatusChip extends StatelessWidget {
   Color _foreground() {
     switch (tone) {
       case StudentChipTone.success:
-        return const Color(0xFF0F7A58);
+        return const Color(0xFFDCFCE7);
       case StudentChipTone.warning:
-        return const Color(0xFF8A5C09);
+        return const Color(0xFFFDE68A);
       case StudentChipTone.danger:
-        return const Color(0xFFA02045);
+        return const Color(0xFFFDA4AF);
       case StudentChipTone.info:
-        return const Color(0xFF1E4B98);
+        return const Color(0xFFBFDBFE);
       case StudentChipTone.neutral:
-        return StudentHomePalette.textSecondary;
+        return const Color(0xFFE2E8F0);
     }
   }
 
   Color _background() {
     switch (tone) {
       case StudentChipTone.success:
-        return const Color(0xFFDDF7EC);
+        return const Color(0x3322C55E);
       case StudentChipTone.warning:
-        return const Color(0xFFFFF1D9);
+        return const Color(0x33F59E0B);
       case StudentChipTone.danger:
-        return const Color(0xFFFFE2EA);
+        return const Color(0x33EF4444);
       case StudentChipTone.info:
-        return const Color(0xFFE1ECFF);
+        return const Color(0x333B82F6);
       case StudentChipTone.neutral:
-        return const Color(0xFFF1F5F9);
+        return const Color(0x33475569);
     }
   }
 
@@ -55,8 +53,9 @@ class StudentStatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(StudentUiRadius.chip),
+        borderRadius: BorderRadius.circular(999),
         color: _background(),
+        border: Border.all(color: _foreground().withValues(alpha: 0.35)),
       ),
       child: Text(
         label,

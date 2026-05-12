@@ -46,6 +46,9 @@ type StudentBilling = {
   installments_paid_count: number;
   installment_target_count: number | null;
   last_paid_at: string | null;
+  next_due_date?: string | null;
+  missed_payment_count?: number;
+  is_overdue?: boolean;
   is_fully_paid: boolean;
 };
 
@@ -63,6 +66,22 @@ type StudentPaymentItem = {
   created_at: string;
 };
 
+type StudentInstallmentItem = {
+  invoice_id: string;
+  invoice_no: string;
+  installment_no: number | null;
+  period_label: string;
+  due_date: string | null;
+  amount: number;
+  balance_amount: number;
+  status: string;
+  paid_at: string | null;
+  is_missed: boolean;
+  days_overdue: number;
+  reminder_enabled: boolean;
+  last_reminder_sent_at: string | null;
+};
+
 type ReceiptInfo = {
   file_name: string;
   download_url: string;
@@ -76,6 +95,7 @@ type AssignmentResponse = {
   current_assignment: CurrentAssignment | null;
   billing: StudentBilling;
   payments: StudentPaymentItem[];
+  installments: StudentInstallmentItem[];
   available_structures: FeeStructureOption[];
 };
 
@@ -122,7 +142,7 @@ type ReceiptWhatsappResponse = {
   message: string;
 };
 
-type SectionKey = 'students' | 'pending' | 'paid' | 'structure';
+type SectionKey = 'students' | 'pending' | 'paid' | 'structure' | 'overdue';
 
 function currency(value: number): string {
   return new Intl.NumberFormat('en-IN', {
@@ -147,7 +167,7 @@ function prettyStream(stream: string): string {
 }
 
 function sectionOrDefault(value: string | null): SectionKey {
-  if (value === 'students' || value === 'pending' || value === 'paid' || value === 'structure') {
+  if (value === 'students' || value === 'pending' || value === 'paid' || value === 'structure' || value === 'overdue') {
     return value;
   }
   return 'students';
@@ -168,6 +188,17 @@ function formatDateTime(value: string | null): string {
   return new Date(value).toLocaleString();
 }
 
+function formatDate(value: string | null): string {
+  if (!value) {
+    return '-';
+  }
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) {
+    return value;
+  }
+  return dt.toLocaleDateString('en-IN');
+}
+
 export default function AdminFeeStudentAssignmentPage() {
   const params = useParams<{ studentId: string }>();
   const searchParams = useSearchParams();
@@ -180,6 +211,7 @@ export default function AdminFeeStudentAssignmentPage() {
   const [structures, setStructures] = useState<FeeStructureOption[]>([]);
   const [billing, setBilling] = useState<StudentBilling | null>(null);
   const [payments, setPayments] = useState<StudentPaymentItem[]>([]);
+  const [installments, setInstallments] = useState<StudentInstallmentItem[]>([]);
   const [selectedStructureId, setSelectedStructureId] = useState('');
   const [receipt, setReceipt] = useState<ReceiptInfo | null>(null);
 
@@ -197,8 +229,37 @@ export default function AdminFeeStudentAssignmentPage() {
   const [referenceNo, setReferenceNo] = useState('');
   const [periodLabel, setPeriodLabel] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
+  const [selectedInstallmentNo, setSelectedInstallmentNo] = useState<string>('auto');
 
   const returnHref = useMemo(() => `/admin/fees?section=${section}`, [section]);
+
+  const sortedInstallments = useMemo(
+    () => [...installments].sort((a, b) => (a.installment_no ?? 999) - (b.installment_no ?? 999)),
+    [installments],
+  );
+
+  const firstInstallmentPaidAmount = useMemo(() => {
+    const first = sortedInstallments.find((item) => item.installment_no === 1) ?? sortedInstallments[0];
+    if (!first) {
+      return 0;
+    }
+    return Math.max(Number(first.amount || 0) - Number(first.balance_amount || 0), 0);
+  }, [sortedInstallments]);
+
+  const nextInstallmentDateFromSchedule = useMemo(() => {
+    const pending = sortedInstallments.find((item) => Number(item.balance_amount || 0) > 0.0001);
+    return pending?.due_date ?? null;
+  }, [sortedInstallments]);
+
+  const missedInstallmentDates = useMemo(
+    () => sortedInstallments.filter((item) => item.is_missed).map((item) => formatDate(item.due_date)),
+    [sortedInstallments],
+  );
+
+  const pendingInstallmentOptions = useMemo(
+    () => sortedInstallments.filter((item) => item.installment_no !== null && Number(item.balance_amount || 0) > 0.0001),
+    [sortedInstallments],
+  );
 
   async function loadReceipt(options?: { regenerate?: boolean }) {
     if (!studentId) {
@@ -211,10 +272,7 @@ export default function AdminFeeStudentAssignmentPage() {
       const response = await apiRequest<ReceiptFetchResponse>(`/api/v1/admin/fees/students/${studentId}/receipt/latest${query}`);
       setReceipt(response.receipt);
     } catch {
-      // Ignore receipt errors in non-full-paid state.
-      if (billing?.is_fully_paid) {
-        setReceipt(null);
-      }
+      setReceipt(null);
     } finally {
       setLoadingReceipt(false);
     }
@@ -237,6 +295,8 @@ export default function AdminFeeStudentAssignmentPage() {
       setStructures(response.available_structures);
       setBilling(response.billing);
       setPayments(response.payments);
+      setInstallments(response.installments ?? []);
+      setSelectedInstallmentNo('auto');
 
       if (response.current_assignment?.fee_structure_id) {
         setSelectedStructureId(response.current_assignment.fee_structure_id);
@@ -252,7 +312,7 @@ export default function AdminFeeStudentAssignmentPage() {
         setPaymentAmount('');
       }
 
-      if (response.billing.is_fully_paid) {
+      if (response.current_assignment) {
         await loadReceipt();
       } else {
         setReceipt(null);
@@ -324,6 +384,7 @@ export default function AdminFeeStudentAssignmentPage() {
           reference_no: referenceNo.trim() || null,
           note: paymentNote.trim() || null,
           period_label: periodLabel.trim() || null,
+          installment_no: selectedInstallmentNo === 'auto' ? null : Number(selectedInstallmentNo),
         }),
       });
 
@@ -332,6 +393,7 @@ export default function AdminFeeStudentAssignmentPage() {
       setPaymentNote('');
       setReferenceNo('');
       setPeriodLabel('');
+      setSelectedInstallmentNo('auto');
       setPaymentAmount(response.billing.pending_amount > 0 ? String(response.billing.pending_amount) : '');
       setSuccessMessage('Payment updated and pending amount recalculated.');
 
@@ -340,6 +402,8 @@ export default function AdminFeeStudentAssignmentPage() {
       } else if (response.billing.is_fully_paid) {
         await loadReceipt();
       }
+
+      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to record payment');
     } finally {
@@ -421,6 +485,9 @@ export default function AdminFeeStudentAssignmentPage() {
                 <div><strong>Total Fee:</strong> {billing?.fee_amount !== null && billing?.fee_amount !== undefined ? currency(billing.fee_amount) : '-'}</div>
                 <div><strong>Paid:</strong> {currency(billing?.paid_amount ?? 0)}</div>
                 <div><strong>Pending:</strong> {currency(billing?.pending_amount ?? 0)}</div>
+                <div><strong>First Installment Paid:</strong> {currency(firstInstallmentPaidAmount)}</div>
+                <div><strong>Next Installment Date:</strong> {formatDate(nextInstallmentDateFromSchedule ?? (billing?.next_due_date as string | null) ?? null)}</div>
+                <div><strong>Missed Installment Dates:</strong> {missedInstallmentDates.length > 0 ? missedInstallmentDates.join(', ') : '-'}</div>
                 <div>
                   <strong>Installments:</strong>{' '}
                   {billing?.installment_target_count
@@ -428,29 +495,35 @@ export default function AdminFeeStudentAssignmentPage() {
                     : `${billing?.installments_paid_count ?? 0}/-`}
                 </div>
                 <div><strong>Last Paid:</strong> {formatDateTime(billing?.last_paid_at ?? null)}</div>
+                <div><strong>Next Due:</strong> {formatDate((billing?.next_due_date as string | null) ?? null)}</div>
+                <div><strong>Missed Installments:</strong> {billing?.missed_payment_count ?? 0}</div>
+                <div>
+                  <strong>Overdue:</strong>{' '}
+                  {billing?.is_overdue ? <span className={styles.cross}>Yes</span> : <span className={styles.tick}>No</span>}
+                </div>
                 <div>
                   <strong>Full Paid:</strong>{' '}
                   {billing?.is_fully_paid ? <span className={styles.tick}>✓</span> : <span className={styles.cross}>✕</span>}
                 </div>
               </div>
 
-              {billing?.is_fully_paid ? (
+              {currentAssignment ? (
                 <div style={{ marginTop: 12 }}>
                   <div className={styles.buttonRow}>
                     <button className={styles.btnPrimary} type="button" onClick={onDownloadReceipt} disabled={!receipt || loadingReceipt}>
-                      {loadingReceipt ? 'Loading...' : 'Download Receipt PDF'}
+                      {loadingReceipt ? 'Loading...' : payments.length > 0 ? 'Print Updated Receipt PDF' : 'Print & Save Receipt PDF'}
                     </button>
                     <button className={styles.btnNeutral} type="button" onClick={onRegenerateReceipt} disabled={loadingReceipt}>
-                      Regenerate PDF
+                      Regenerate Receipt
                     </button>
-                    <button className={styles.btnSecondary} type="button" onClick={onSendWhatsapp} disabled={sendingWhatsapp || loadingReceipt}>
-                      {sendingWhatsapp ? 'Sending...' : 'Send to Parent WhatsApp'}
+                    <button className={styles.btnSecondary} type="button" onClick={onSendWhatsapp} disabled={sendingWhatsapp || loadingReceipt || !receipt}>
+                      {sendingWhatsapp ? 'Sending...' : 'Send Receipt to Parent WhatsApp'}
                     </button>
                   </div>
                   <p className={styles.cardSubtle} style={{ marginTop: 8 }}>
                     {receipt
                       ? `Latest receipt: ${receipt.file_name} (${formatDateTime(receipt.generated_at)})`
-                      : 'Receipt will be available after generation.'}
+                      : 'Generate receipt once fee is finalized.'}
                   </p>
                 </div>
               ) : null}
@@ -532,6 +605,18 @@ export default function AdminFeeStudentAssignmentPage() {
                   </div>
 
                   <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Installment Selection</span>
+                    <select className={styles.select} value={selectedInstallmentNo} onChange={(event) => setSelectedInstallmentNo(event.target.value)}>
+                      <option value="auto">Auto Allocate (Next Due)</option>
+                      {pendingInstallmentOptions.map((item) => (
+                        <option key={item.invoice_id} value={String(item.installment_no)}>
+                          {`Installment ${item.installment_no ?? '-'} • Due ${formatDate(item.due_date)} • Balance ${currency(item.balance_amount)}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className={styles.field}>
                     <span className={styles.fieldLabel}>Reference Number (optional)</span>
                     <input className={styles.input} value={referenceNo} onChange={(event) => setReferenceNo(event.target.value)} />
                   </label>
@@ -552,6 +637,53 @@ export default function AdminFeeStudentAssignmentPage() {
                 </form>
               )}
             </div>
+          </div>
+
+          <div className={styles.card}>
+            <h3 className={styles.cardTitle}>Installment Schedule & Missed Dates</h3>
+            {installments.length === 0 ? (
+              <p className={styles.cardSubtle}>No installment schedule available yet.</p>
+            ) : (
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Installment</th>
+                      <th>Invoice</th>
+                      <th>Due Date</th>
+                      <th>Status</th>
+                      <th>Amount</th>
+                      <th>Balance</th>
+                      <th>Missed</th>
+                      <th>Last Reminder</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {installments.map((item) => (
+                      <tr key={item.invoice_id}>
+                        <td>{item.installment_no ?? '-'}</td>
+                        <td>
+                          <div style={{ fontWeight: 700 }}>{item.invoice_no}</div>
+                          <div className={styles.muted} style={{ fontSize: 12 }}>{item.period_label}</div>
+                        </td>
+                        <td>{formatDate(item.due_date)}</td>
+                        <td style={{ textTransform: 'capitalize' }}>{item.status}</td>
+                        <td>{currency(item.amount)}</td>
+                        <td>{currency(item.balance_amount)}</td>
+                        <td>
+                          {item.is_missed ? (
+                            <span className={styles.cross} title="Missed installment">{item.days_overdue}d</span>
+                          ) : (
+                            <span className={styles.tick} title="On time">✓</span>
+                          )}
+                        </td>
+                        <td>{formatDateTime(item.last_reminder_sent_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className={styles.card}>

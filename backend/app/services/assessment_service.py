@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import re
 from decimal import Decimal
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status as http_status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.assessment_type import require_assessment_type
 from app.core.exceptions import ForbiddenException, NotFoundException
 from app.db.models.academic import Subject
+from app.db.models.enums import AssessmentType
 from app.db.models.assessment import Assessment, AssessmentAttempt, AssessmentQuestion, AttemptAnswer, QuestionBank
 from app.db.models.enums import AttemptStatus
 from app.db.models.results import Result
@@ -27,13 +30,10 @@ class AssessmentService:
     @staticmethod
     def _extract_class_level(class_name: str | None) -> int | None:
         text = (class_name or "").strip()
-        if "10" in text:
-            return 10
-        if "11" in text:
-            return 11
-        if "12" in text:
-            return 12
-        return None
+        match = re.search(r"(6|7|8|9|10|11|12)", text)
+        if not match:
+            return None
+        return int(match.group(1))
 
     @staticmethod
     def _normalize_stream(stream: str | None) -> str | None:
@@ -216,6 +216,12 @@ class AssessmentService:
     ) -> tuple[list[dict], int]:
         class_level = self._extract_class_level(class_name)
         normalized_stream = self._normalize_stream(stream)
+        normalized_assessment_type: AssessmentType | None = None
+        if assessment_type:
+            try:
+                normalized_assessment_type = require_assessment_type(assessment_type)
+            except ValueError as exc:
+                raise HTTPException(status_code=http_status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
         # Keep absent state in sync for missed windows.
         await self.materialize_absent_results_for_student(
@@ -230,7 +236,7 @@ class AssessmentService:
             batch_id=batch_id,
             class_level=class_level,
             stream=normalized_stream,
-            assessment_type=assessment_type,
+            assessment_type=normalized_assessment_type,
             status=status,
             subject_id=subject_id,
             limit=limit,
@@ -273,8 +279,8 @@ class AssessmentService:
                     "assessment_type": self._enum_value(row.assessment_type),
                     "status": self._enum_value(row.status),
                     "availability": availability,
-                    "starts_at": row.starts_at,
-                    "ends_at": row.ends_at,
+                    "starts_at": self._to_utc(row.starts_at),
+                    "ends_at": self._to_utc(row.ends_at),
                     "duration_sec": int(row.duration_sec),
                     "duration_minutes": int(row.duration_sec) // 60,
                     "attempt_limit": int(row.attempt_limit),
@@ -336,8 +342,8 @@ class AssessmentService:
             "assessment_type": self._enum_value(assessment.assessment_type),
             "status": self._enum_value(assessment.status),
             "availability": availability,
-            "starts_at": assessment.starts_at,
-            "ends_at": assessment.ends_at,
+            "starts_at": self._to_utc(assessment.starts_at),
+            "ends_at": self._to_utc(assessment.ends_at),
             "duration_sec": int(assessment.duration_sec),
             "duration_minutes": int(assessment.duration_sec) // 60,
             "attempt_limit": int(assessment.attempt_limit),
@@ -424,8 +430,8 @@ class AssessmentService:
             return {
                 "attempt_id": latest_attempt.id,
                 "status": self._enum_value(latest_attempt.status),
-                "started_at": latest_attempt.started_at,
-                "expires_at": latest_attempt.expires_at,
+                "started_at": self._to_utc(latest_attempt.started_at),
+                "expires_at": self._to_utc(latest_attempt.expires_at),
                 "remaining_seconds": max(0, int(((latest_expires_at or now) - now).total_seconds())),
                 "assessment": await self.get_test_detail(
                     assessment_id=assessment.id,
@@ -454,8 +460,8 @@ class AssessmentService:
         return {
             "attempt_id": attempt.id,
             "status": self._enum_value(attempt.status),
-            "started_at": attempt.started_at,
-            "expires_at": attempt.expires_at,
+            "started_at": self._to_utc(attempt.started_at),
+            "expires_at": self._to_utc(attempt.expires_at),
             "remaining_seconds": max(0, int(((self._to_utc(attempt.expires_at) or datetime.now(UTC)) - datetime.now(UTC)).total_seconds())),
             "assessment": await self.get_test_detail(
                 assessment_id=assessment.id,
@@ -499,7 +505,7 @@ class AssessmentService:
         selected_key = self._extract_selected_key(answer_payload)
         if selected_key is None:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="selected option key is required",
             )
 
@@ -686,9 +692,9 @@ class AssessmentService:
             "attempt_id": attempt.id,
             "assessment_id": assessment.id,
             "status": self._enum_value(attempt.status),
-            "started_at": attempt.started_at,
-            "expires_at": attempt.expires_at,
-            "submitted_at": attempt.submitted_at,
+            "started_at": self._to_utc(attempt.started_at),
+            "expires_at": self._to_utc(attempt.expires_at),
+            "submitted_at": self._to_utc(attempt.submitted_at),
             "remaining_seconds": remaining_seconds,
             "score": score if is_completed else None,
             "total_marks": total_marks,

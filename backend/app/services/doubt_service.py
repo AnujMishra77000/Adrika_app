@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.cache.keys import student_dashboard_key, student_unread_notifications_key, teacher_dashboard_key
 from app.cache.utils import delete_keys
 from app.core.exceptions import NotFoundException
+from app.core.timezone import to_app_timezone
 from app.db.models.enums import NotificationType
 from app.db.models.notification import Notification
 from app.db.models.user import User
@@ -221,7 +222,7 @@ class DoubtService:
                 "topic": row.topic,
                 "status": row.status.value if hasattr(row.status, "value") else str(row.status),
                 "priority": row.priority,
-                "created_at": row.created_at,
+                "created_at": to_app_timezone(row.created_at),
             }
             for row in rows
         ], total
@@ -280,7 +281,7 @@ class DoubtService:
             "topic": doubt.topic,
             "status": doubt.status.value if hasattr(doubt.status, "value") else str(doubt.status),
             "priority": doubt.priority,
-            "created_at": doubt.created_at,
+            "created_at": to_app_timezone(doubt.created_at),
             "teacher_notified": bool(teacher_user_id),
         }
 
@@ -340,7 +341,7 @@ class DoubtService:
             "description": doubt.description,
             "status": doubt.status.value if hasattr(doubt.status, "value") else str(doubt.status),
             "priority": doubt.priority,
-            "created_at": doubt.created_at,
+            "created_at": to_app_timezone(doubt.created_at),
         }
 
     async def get_detail(self, *, student_id: str, doubt_id: str) -> dict:
@@ -360,7 +361,7 @@ class DoubtService:
                 "description": doubt.description,
                 "status": doubt.status.value if hasattr(doubt.status, "value") else str(doubt.status),
                 "priority": doubt.priority,
-                "created_at": doubt.created_at,
+                "created_at": to_app_timezone(doubt.created_at),
             },
             "messages": [
                 {
@@ -368,18 +369,29 @@ class DoubtService:
                     "sender_user_id": message.sender_user_id,
                     "sender_name": sender_name_map.get(message.sender_user_id or "", "Unknown"),
                     "message": message.message,
-                    "created_at": message.created_at,
+                    "created_at": to_app_timezone(message.created_at),
                 }
                 for message in messages
             ],
         }
 
-    async def list_messages(self, *, student_id: str, doubt_id: str, since: datetime | None) -> list[dict]:
+    async def list_messages(
+        self,
+        *,
+        student_id: str,
+        doubt_id: str,
+        since: datetime | None,
+        since_id: str | None,
+    ) -> list[dict]:
         doubt = await self.repo.get_doubt_for_student(doubt_id=doubt_id, student_id=student_id)
         if not doubt:
             raise NotFoundException("Doubt not found")
 
-        messages = await self.repo.list_messages(doubt_id=doubt.id, since=since)
+        messages = await self.repo.list_messages(
+            doubt_id=doubt.id,
+            since=since,
+            since_id=since_id,
+        )
         sender_name_map = await self._sender_name_map(messages=messages)
         return [
             {
@@ -387,7 +399,7 @@ class DoubtService:
                 "sender_user_id": message.sender_user_id,
                 "sender_name": sender_name_map.get(message.sender_user_id or "", "Unknown"),
                 "message": message.message,
-                "created_at": message.created_at,
+                "created_at": to_app_timezone(message.created_at),
             }
             for message in messages
         ]
@@ -423,5 +435,5 @@ class DoubtService:
             "sender_user_id": saved.sender_user_id,
             "sender_name": sender_name,
             "message": saved.message,
-            "created_at": saved.created_at,
+            "created_at": to_app_timezone(saved.created_at),
         }

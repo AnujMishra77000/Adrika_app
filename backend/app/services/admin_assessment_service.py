@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
@@ -10,12 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cache.keys import student_dashboard_key, student_unread_notifications_key
 from app.cache.utils import delete_keys
+from app.core.assessment_type import require_assessment_type
 from app.core.exceptions import NotFoundException
+from app.core.timezone import app_timezone, ensure_utc, to_app_timezone
 from app.db.models.academic import Batch, Standard, StudentProfile, Subject, SubjectAcademicScope
 from app.db.models.assessment import Assessment, AssessmentAssignment, AssessmentQuestion, QuestionBank
 from app.db.models.audit import AuditLog
-from app.db.models.enums import AssessmentStatus, AssessmentType, NotificationType, UserStatus
-from app.db.models.notification import Notification
+from app.db.models.enums import AssessmentStatus, UserStatus
 from app.db.models.user import User
 from app.schemas.admin import (
     AdminAssessmentAssignDTO,
@@ -23,6 +25,7 @@ from app.schemas.admin import (
     AdminQuestionBankCreateDTO,
     AdminQuestionBankUpdateDTO,
 )
+from app.services.notification_service import NotificationService
 
 
 class AdminAssessmentService:
@@ -55,6 +58,18 @@ class AdminAssessmentService:
         )
 
     @staticmethod
+    def _to_utc(value: datetime | None) -> datetime | None:
+        return ensure_utc(value)
+
+    @staticmethod
+    def _to_utc_from_app_input(value: datetime | None) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+            return value.replace(tzinfo=app_timezone()).astimezone(UTC)
+        return value.astimezone(UTC)
+
+    @staticmethod
     def _normalize_stream(stream: str | None) -> str:
         value = (stream or "").strip().lower()
         if value in {"science", "sci"}:
@@ -66,21 +81,18 @@ class AdminAssessmentService:
     @staticmethod
     def _extract_grade(class_name: str | None, standard_name: str | None) -> int | None:
         source = f"{class_name or ''} {standard_name or ''}".lower()
-        if "10" in source:
-            return 10
-        if "11" in source:
-            return 11
-        if "12" in source:
-            return 12
-        return None
+        match = re.search(r"(6|7|8|9|10|11|12)", source)
+        if not match:
+            return None
+        return int(match.group(1))
 
     @staticmethod
     def _validate_class_stream(class_level: int, stream: str | None) -> str | None:
         normalized = None if stream is None else AdminAssessmentService._normalize_stream(stream)
-        if class_level == 10 and normalized is not None:
+        if class_level <= 10 and normalized is not None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="stream is not allowed for class 10",
+                detail="stream is not allowed for class 10 and below",
             )
         if class_level in {11, 12} and normalized not in {"science", "commerce"}:
             raise HTTPException(
@@ -108,7 +120,7 @@ class AdminAssessmentService:
         if int(total_scope_rows or 0) == 0:
             return
 
-        scope_stream = "common" if class_level == 10 else self._normalize_stream(stream)
+        scope_stream = "common" if class_level <= 10 else self._normalize_stream(stream)
         mapped = (
             await self.session.execute(
                 select(func.count()).select_from(SubjectAcademicScope).where(
@@ -120,10 +132,10 @@ class AdminAssessmentService:
         ).scalar_one()
 
         if int(mapped or 0) == 0:
-            if class_level == 10:
+            if class_level <= 10:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Selected subject is not mapped for class 10",
+                    detail="Selected subject is not mapped for class 10 and below",
                 )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -523,6 +535,11 @@ class AdminAssessmentService:
         if payload.passing_marks > total_marks:
             raise HTTPException(status_code=400, detail="passing_marks cannot exceed total_marks")
 
+        try:
+            normalized_assessment_type = require_assessment_type(payload.assessment_type)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         assessment = Assessment(
             title=payload.title.strip(),
             description=payload.description.strip() if payload.description else None,
@@ -530,7 +547,7 @@ class AdminAssessmentService:
             class_level=payload.class_level,
             stream=stream,
             topic=payload.topic.strip() if payload.topic else None,
-            assessment_type=AssessmentType(payload.assessment_type),
+            assessment_type=normalized_assessment_type,
             status=AssessmentStatus.DRAFT,
             starts_at=None,
             ends_at=None,
@@ -603,8 +620,13 @@ class AdminAssessmentService:
         if not assessment:
             raise NotFoundException("Assessment not found")
 
-        if payload.ends_at <= payload.starts_at:
+        starts_at = self._to_utc_from_app_input(payload.starts_at)
+        ends_at = self._to_utc_from_app_input(payload.ends_at)
+
+        if ends_at <= starts_at:
             raise HTTPException(status_code=400, detail="ends_at must be after starts_at")
+        # if payload.ends_at <= payload.starts_at:
+        #     raise HTTPException(status_code=400, detail="ends_at must be after starts_at")
 
         if payload.targets:
             targets = [target.model_dump() for target in payload.targets]
@@ -623,8 +645,8 @@ class AdminAssessmentService:
             "ends_at": assessment.ends_at,
         }
 
-        assessment.starts_at = payload.starts_at
-        assessment.ends_at = payload.ends_at
+        assessment.starts_at = starts_at
+        assessment.ends_at = ends_at
         if payload.publish:
             assessment.status = AssessmentStatus.PUBLISHED
 
@@ -641,29 +663,6 @@ class AdminAssessmentService:
             )
 
         student_ids, user_ids = await self._resolve_target_students_and_users(targets)
-
-        if payload.publish and payload.send_notification:
-            title = f"New Test Assigned: {assessment.title}"
-            starts_label = payload.starts_at.astimezone(UTC).strftime("%d %b %Y %H:%M UTC")
-            body = f"{assessment.title} is scheduled. Start window opens at {starts_label}."
-            for user_id in user_ids:
-                self.session.add(
-                    Notification(
-                        recipient_user_id=user_id,
-                        notification_type=NotificationType.TEST,
-                        title=title,
-                        body=body,
-                        metadata_json={
-                            "source": "test",
-                            "assessment_id": assessment.id,
-                            "class_level": assessment.class_level,
-                            "stream": assessment.stream,
-                            "starts_at": payload.starts_at.isoformat(),
-                            "ends_at": payload.ends_at.isoformat(),
-                        },
-                        is_read=False,
-                    )
-                )
 
         await self._audit(
             actor_user_id=actor_user_id,
@@ -683,6 +682,40 @@ class AdminAssessmentService:
 
         await self.session.commit()
 
+        notifications_created = 0
+        if payload.publish and payload.send_notification and user_ids:
+            title = f"New Test Assigned: {assessment.title}"
+            starts_local = to_app_timezone(starts_at)
+            starts_label = (
+                starts_local.strftime("%d %b %Y %I:%M %p %Z")
+                if starts_local
+                else starts_at.strftime("%d %b %Y %I:%M %p UTC")
+            )
+            body = f"{assessment.title} is scheduled. Start window opens at {starts_label}."
+
+            notification_targets = [
+                {"target_type": "student", "target_id": user_id}
+                for user_id in user_ids
+            ]
+            send_result = await NotificationService(self.session, self.cache).send_to_targets(
+                title=title,
+                body=body,
+                notification_type="test",
+                targets=notification_targets,
+                metadata={
+                    "source": "test",
+                    "assessment_id": assessment.id,
+                    "class_level": assessment.class_level,
+                    "stream": assessment.stream,
+                    "starts_at": starts_at.isoformat(),
+                    "ends_at": ends_at.isoformat(),
+                },
+                actor_user_id=actor_user_id,
+                audit_action="admin.assessment.assign.notify",
+                audit_ip_address=ip_address,
+            )
+            notifications_created = int(send_result.get("recipient_count", 0) or 0)
+
         if self.cache is not None:
             cache_keys = [student_dashboard_key(student_id) for student_id in student_ids]
             cache_keys.extend(student_unread_notifications_key(user_id) for user_id in user_ids)
@@ -692,11 +725,11 @@ class AdminAssessmentService:
             "id": assessment.id,
             "title": assessment.title,
             "status": assessment.status.value,
-            "starts_at": assessment.starts_at,
-            "ends_at": assessment.ends_at,
+            "starts_at": self._to_utc(assessment.starts_at),
+            "ends_at": self._to_utc(assessment.ends_at),
             "target_count": len(targets),
             "assigned_students": len(student_ids),
-            "notifications_created": len(user_ids) if payload.publish and payload.send_notification else 0,
+            "notifications_created": notifications_created,
         }
 
     async def list_test_questions(self, *, assessment_id: str) -> dict:

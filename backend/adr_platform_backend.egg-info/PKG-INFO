@@ -20,8 +20,11 @@ Requires-Dist: celery<6.0.0,>=5.4.0
 Requires-Dist: structlog<25.0.0,>=24.4.0
 Requires-Dist: orjson<4.0.0,>=3.10.7
 Requires-Dist: httpx<1.0.0,>=0.27.0
+Requires-Dist: google-auth<3.0.0,>=2.34.0
+Requires-Dist: requests<3.0.0,>=2.32.0
 Requires-Dist: tenacity<10.0.0,>=9.0.0
 Requires-Dist: email-validator<3.0.0,>=2.2.0
+Requires-Dist: Pillow<12.0.0,>=10.4.0
 Provides-Extra: dev
 Requires-Dist: pytest<9.0.0,>=8.3.0; extra == "dev"
 Requires-Dist: pytest-asyncio<1.0.0,>=0.23.8; extra == "dev"

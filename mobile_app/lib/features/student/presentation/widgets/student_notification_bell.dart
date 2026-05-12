@@ -1,35 +1,57 @@
 import "package:flutter/material.dart";
 
-import "student_home_palette.dart";
-
 class StudentNotificationBell extends StatelessWidget {
   const StudentNotificationBell({
     super.key,
     required this.unreadCount,
     required this.onTap,
+    this.iconSize = 22,
+    this.iconPadding = 10,
   });
 
   final int unreadCount;
   final VoidCallback onTap;
+  final double iconSize;
+  final double iconPadding;
 
   @override
   Widget build(BuildContext context) {
+    final radius = (iconPadding + (iconSize / 2)).clamp(12.0, 20.0);
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Material(
-          color: StudentHomePalette.surface,
-          shadowColor: Colors.black.withValues(alpha: 0.12),
-          elevation: 3,
-          borderRadius: BorderRadius.circular(14),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(radius),
           child: InkWell(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(radius),
             onTap: onTap,
-            child: const Padding(
-              padding: EdgeInsets.all(10),
+            child: Ink(
+              padding: EdgeInsets.all(iconPadding),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(radius),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF3155DA),
+                    Color(0xFF1C3FAF),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF173690).withValues(alpha: 0.28),
+                    blurRadius: 14,
+                    spreadRadius: -6,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
               child: Icon(
-                Icons.notifications_none_rounded,
-                color: StudentHomePalette.textPrimary,
+                Icons.notifications_rounded,
+                color: Colors.white,
+                size: iconSize,
               ),
             ),
           ),

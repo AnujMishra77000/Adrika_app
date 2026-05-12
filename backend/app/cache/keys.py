@@ -11,6 +11,10 @@ def student_homework_key(student_id: str, limit: int, offset: int) -> str:
 
 
 def student_unread_notifications_key(user_id: str) -> str:
+    return user_unread_notifications_key(user_id)
+
+
+def user_unread_notifications_key(user_id: str) -> str:
     return f"user:{user_id}:notif_unread:v1"
 
 
@@ -32,3 +36,7 @@ def parent_dashboard_key(parent_id: str, student_id: str) -> str:
 
 def parent_notices_key(parent_id: str, student_id: str, limit: int, offset: int) -> str:
     return f"parent:{parent_id}:student:{student_id}:notices:{limit}:{offset}:v1"
+
+
+def student_home_summary_key(student_id: str) -> str:
+    return f"student:{student_id}:home_summary:v1"

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import AsyncClient
@@ -74,6 +75,7 @@ async def _create_test(
     subject_id: str,
     question_id: str,
     title: str,
+    assessment_type: str = "scheduled",
 ) -> str:
     response = await client.post(
         "/api/v1/admin/assessments/create-test",
@@ -84,7 +86,7 @@ async def _create_test(
             "class_level": 10,
             "subject_id": subject_id,
             "topic": "Algebra",
-            "assessment_type": "scheduled",
+            "assessment_type": assessment_type,
             "duration_minutes": 30,
             "attempt_limit": 1,
             "passing_marks": 1,
@@ -99,6 +101,92 @@ async def _create_test(
     )
     assert response.status_code == 200
     return response.json()["id"]
+
+
+@pytest.mark.anyio
+async def test_assessment_type_aliases_route_tests_to_correct_student_sections(client: AsyncClient) -> None:
+    admin_token = await _login_token(client, "admin@test.local", "Admin@123", "device-admin-assessment-alias-1")
+    student_token = await _login_token(client, "student@test.local", "Student@123", "device-student-assessment-alias-1")
+
+    subject_id = await _math_subject_id(client, admin_token)
+    practice_question_id = await _create_question(
+        client,
+        admin_token,
+        subject_id=subject_id,
+        topic="Alias Practice",
+        prompt="What is 10 + 5?",
+    )
+    online_question_id = await _create_question(
+        client,
+        admin_token,
+        subject_id=subject_id,
+        topic="Alias Online",
+        prompt="What is 12 + 8?",
+    )
+
+    practice_assessment_id = await _create_test(
+        client,
+        admin_token,
+        subject_id=subject_id,
+        question_id=practice_question_id,
+        title="Practice Alias Test",
+        assessment_type="practice_test",
+    )
+    online_assessment_id = await _create_test(
+        client,
+        admin_token,
+        subject_id=subject_id,
+        question_id=online_question_id,
+        title="Online Alias Test",
+        assessment_type="online_test",
+    )
+
+    now = datetime.now(UTC)
+    for assessment_id in [practice_assessment_id, online_assessment_id]:
+        assign_response = await client.post(
+            f"/api/v1/admin/assessments/{assessment_id}/assign",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={
+                "starts_at": (now - timedelta(minutes=5)).isoformat(),
+                "ends_at": (now + timedelta(minutes=55)).isoformat(),
+                "targets": [{"target_type": "all_students", "target_id": "all"}],
+                "publish": True,
+                "send_notification": False,
+            },
+        )
+        assert assign_response.status_code == 200
+
+    list_response = await client.get(
+        "/api/v1/students/me/tests?limit=100&offset=0",
+        headers={"Authorization": f"Bearer {student_token}"},
+    )
+    assert list_response.status_code == 200
+    items = list_response.json()["items"]
+
+    practice_item = next((item for item in items if item["id"] == practice_assessment_id), None)
+    online_item = next((item for item in items if item["id"] == online_assessment_id), None)
+    assert practice_item is not None
+    assert online_item is not None
+    assert practice_item["assessment_type"] in {"daily_practice", "subject_practice"}
+    assert online_item["assessment_type"] == "scheduled"
+
+    practice_filter_response = await client.get(
+        "/api/v1/students/me/tests?assessment_type=practice_test&limit=100&offset=0",
+        headers={"Authorization": f"Bearer {student_token}"},
+    )
+    assert practice_filter_response.status_code == 200
+    practice_ids = {item["id"] for item in practice_filter_response.json()["items"]}
+    assert practice_assessment_id in practice_ids
+    assert online_assessment_id not in practice_ids
+
+    online_filter_response = await client.get(
+        "/api/v1/students/me/tests?assessment_type=online_test&limit=100&offset=0",
+        headers={"Authorization": f"Bearer {student_token}"},
+    )
+    assert online_filter_response.status_code == 200
+    online_ids = {item["id"] for item in online_filter_response.json()["items"]}
+    assert online_assessment_id in online_ids
+    assert practice_assessment_id not in online_ids
 
 
 @pytest.mark.anyio
@@ -184,6 +272,72 @@ async def test_admin_can_build_assign_and_student_can_attempt_test(client: Async
         item["notification_type"] == "test" and item.get("metadata", {}).get("assessment_id") == assessment_id
         for item in notifications_response.json()["items"]
     )
+
+
+@pytest.mark.anyio
+async def test_assign_test_with_naive_ist_input_is_live_for_student(client: AsyncClient) -> None:
+    admin_token = await _login_token(client, "admin@test.local", "Admin@123", "device-admin-assessment-ist")
+    student_token = await _login_token(client, "student@test.local", "Student@123", "device-student-assessment-ist")
+
+    subject_id = await _math_subject_id(client, admin_token)
+    question_id = await _create_question(
+        client,
+        admin_token,
+        subject_id=subject_id,
+        topic="IST Schedule",
+        prompt="What is 5 + 5?",
+    )
+
+    assessment_id = await _create_test(
+        client,
+        admin_token,
+        subject_id=subject_id,
+        question_id=question_id,
+        title="Scheduled Math Test - IST",
+    )
+
+    now = datetime.now(UTC)
+    ist = ZoneInfo("Asia/Kolkata")
+    starts_utc_expected = now - timedelta(minutes=3)
+    ends_utc_expected = now + timedelta(minutes=27)
+
+    # Simulate datetime-local payload without timezone. Backend must treat it as IST.
+    starts_local_naive = starts_utc_expected.astimezone(ist).replace(tzinfo=None)
+    ends_local_naive = ends_utc_expected.astimezone(ist).replace(tzinfo=None)
+
+    assign_response = await client.post(
+        f"/api/v1/admin/assessments/{assessment_id}/assign",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "starts_at": starts_local_naive.isoformat(timespec="minutes"),
+            "ends_at": ends_local_naive.isoformat(timespec="minutes"),
+            "targets": [{"target_type": "all_students", "target_id": "all"}],
+            "publish": True,
+            "send_notification": False,
+        },
+    )
+    assert assign_response.status_code == 200
+
+    assigned_payload = assign_response.json()
+    assigned_starts = datetime.fromisoformat(assigned_payload["starts_at"])
+    assigned_ends = datetime.fromisoformat(assigned_payload["ends_at"])
+    if assigned_starts.tzinfo is None:
+        assigned_starts = assigned_starts.replace(tzinfo=UTC)
+    if assigned_ends.tzinfo is None:
+        assigned_ends = assigned_ends.replace(tzinfo=UTC)
+
+    assert abs((assigned_starts - starts_utc_expected).total_seconds()) < 120
+    assert abs((assigned_ends - ends_utc_expected).total_seconds()) < 120
+
+    list_response = await client.get(
+        "/api/v1/students/me/tests?limit=50&offset=0",
+        headers={"Authorization": f"Bearer {student_token}"},
+    )
+    assert list_response.status_code == 200
+    items = list_response.json()["items"]
+    test_item = next((item for item in items if item["id"] == assessment_id), None)
+    assert test_item is not None
+    assert test_item["availability"] == "live"
 
 
 @pytest.mark.anyio

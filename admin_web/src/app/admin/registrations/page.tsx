@@ -30,6 +30,7 @@ type RegistrationRequestItem = {
     qualification: string | null;
     specialization: string | null;
     school_college: string | null;
+    teaching_scope: string | null;
     address: string | null;
     photo_url: string | null;
   };
@@ -147,6 +148,7 @@ export default function AdminRegistrationsPage() {
                     <div><strong>Age / Gender:</strong> {item.teacher_profile.age ?? '-'} / {item.teacher_profile.gender ?? '-'}</div>
                     <div><strong>Qualification:</strong> {item.teacher_profile.qualification ?? '-'}</div>
                     <div><strong>Specialization:</strong> {item.teacher_profile.specialization ?? '-'}</div>
+                    <div><strong>Teaching:</strong> {item.teacher_profile.teaching_scope ?? '-'}</div>
                     <div><strong>School / College:</strong> {item.teacher_profile.school_college ?? '-'}</div>
                     <div><strong>Address:</strong> {item.teacher_profile.address ?? '-'}</div>
                   </div>
@@ -162,7 +164,7 @@ export default function AdminRegistrationsPage() {
                   </button>
                   <button
                     className="btn"
-                    style={{ background: '#ef4444' }}
+                    style={{ background: '#7c3aed' }}
                     disabled={busyRequestId === item.request_id}
                     onClick={() => void decide(item.request_id, 'rejected')}
                   >

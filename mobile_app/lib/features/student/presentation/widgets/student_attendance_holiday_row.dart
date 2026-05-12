@@ -1,3 +1,5 @@
+import "dart:ui";
+
 import "package:flutter/material.dart";
 
 import "../../models/student_models.dart";
@@ -58,7 +60,7 @@ class StudentAttendanceHolidayRow extends StatelessWidget {
             child: _GoldInfoCard(
               title: "Attendance",
               icon: Icons.fact_check_outlined,
-              iconColor: const Color(0xFF3D2B00),
+              iconColor: const Color(0xFFEAF2FF),
               primaryText:
                   "${attendance.attendancePercent.toStringAsFixed(1)}%",
               secondaryText:
@@ -75,7 +77,7 @@ class StudentAttendanceHolidayRow extends StatelessWidget {
             child: _GoldInfoCard(
               title: "Holiday",
               icon: Icons.celebration_outlined,
-              iconColor: const Color(0xFF3D2B00),
+              iconColor: const Color(0xFFEAF2FF),
               primaryText: holiday.nextHolidayName,
               secondaryText: _holidaySubtitle(),
               chipText: _holidayCountdown(),
@@ -113,103 +115,118 @@ class _GoldInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFB9891A),
-                Color(0xFFA67812),
-              ],
-            ),
-            border: Border.all(color: const Color(0xFFF5D277)),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF8C6207).withValues(alpha: 0.30),
-                blurRadius: 20,
-                spreadRadius: -7,
-                offset: const Offset(0, 10),
+        borderRadius: BorderRadius.circular(20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: const SizedBox.expand(),
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(icon, color: iconColor, size: 20),
-                    const SizedBox(width: 6),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: const Color(0xFF3D2B00),
-                            fontWeight: FontWeight.w700,
-                          ),
+              Ink(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFF090A0C).withValues(alpha: 0.92),
+                  border: Border.all(
+                      color: const Color(0xFF2A2F36).withValues(alpha: 0.92)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF000000).withValues(alpha: 0.42),
+                      blurRadius: 22,
+                      spreadRadius: -8,
+                      offset: const Offset(0, 12),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  primaryText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF2E2100),
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  secondaryText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF4A3506),
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const Spacer(),
-                if (progress != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      minHeight: 6,
-                      value: progress,
-                      backgroundColor: Colors.white.withValues(alpha: 0.34),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF2F1F00),
-                      ),
-                    ),
-                  ),
-                ],
-                if (chipText != null) ...[
-                  Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(999),
-                      color: Colors.white.withValues(alpha: 0.28),
-                    ),
-                    child: Text(
-                      chipText!,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: const Color(0xFF3A2A00),
-                            fontWeight: FontWeight.w700,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(icon, color: iconColor, size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                  color: const Color(0xFFF4F7FF),
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
-                    ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        primaryText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        secondaryText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFFCBD5E1),
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const Spacer(),
+                      if (progress != null) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            minHeight: 6,
+                            value: progress,
+                            backgroundColor:
+                                const Color(0xFF2A2F36).withValues(alpha: 0.9),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF6EA8FF),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (chipText != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color:
+                                const Color(0xFF1C222B).withValues(alpha: 0.95),
+                          ),
+                          child: Text(
+                            chipText!,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: const Color(0xFFE5EAF3),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

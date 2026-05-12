@@ -123,6 +123,7 @@ class RegistrationService:
                 qualification=payload.qualification.strip(),
                 specialization=payload.specialization.strip(),
                 school_college=payload.school_college.strip() if payload.school_college else None,
+                teaching_scope=payload.teaching,
                 address=payload.address.strip(),
                 photo_url=photo_url,
             )

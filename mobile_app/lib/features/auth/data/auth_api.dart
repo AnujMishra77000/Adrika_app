@@ -74,6 +74,7 @@ class AuthApi {
     required String gender,
     required String qualification,
     required String specialization,
+    required String teaching,
     String? schoolCollege,
     required String contactNumber,
     required String password,
@@ -88,6 +89,7 @@ class AuthApi {
       'qualification': qualification,
       'specialization': specialization,
       'school_college': schoolCollege,
+      'teaching': teaching,
       'contact_number': contactNumber,
       'password': password,
       'confirm_password': confirmPassword,
@@ -103,6 +105,23 @@ class AuthApi {
       formData: FormData.fromMap(formMap),
     );
     return RegistrationResponseData.fromJson(response);
+  }
+
+  Future<void> resetForgottenPassword({
+    required String phone,
+    required String newPassword,
+    required String confirmPassword,
+    String role = 'student',
+  }) async {
+    await _client.postMap(
+      '/auth/forgot-password/reset',
+      body: {
+        'phone': phone,
+        'new_password': newPassword,
+        'confirm_password': confirmPassword,
+        'role': role,
+      },
+    );
   }
 
   Future<void> logout({required String refreshToken}) async {

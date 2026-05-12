@@ -127,15 +127,37 @@ class StudentApi {
     );
   }
 
+  Future<List<StudentContentBanner>> fetchContentBanners({
+    required String accessToken,
+  }) async {
+    final response = await _client.getMap(
+      '/students/me/content',
+      accessToken: accessToken,
+    );
+
+    final raw = response['banners'] as List<dynamic>? ?? <dynamic>[];
+    return raw
+        .map(
+          (item) => StudentContentBanner.fromJson(item as Map<String, dynamic>),
+        )
+        .where((item) => item.mediaUrl.trim().isNotEmpty)
+        .toList(growable: false);
+  }
+
   Future<List<StudentNotificationItem>> fetchNotifications({
     required String accessToken,
     int limit = 20,
+    int? sinceHours,
   }) async {
     try {
       final response = await _client.getMap(
         '/students/me/notifications',
         accessToken: accessToken,
-        queryParameters: {'limit': limit, 'offset': 0},
+        queryParameters: {
+          'limit': limit,
+          'offset': 0,
+          if (sinceHours != null) 'since_hours': sinceHours,
+        },
       );
 
       final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
@@ -155,6 +177,40 @@ class StudentApi {
     }
   }
 
+  Future<int?> markNotificationRead({
+    required String accessToken,
+    required String notificationId,
+  }) async {
+    try {
+      final response = await _client.postMap(
+        '/students/me/notifications/$notificationId/read',
+        accessToken: accessToken,
+      );
+      return (response['unread_count'] as num?)?.toInt();
+    } catch (_) {
+      final response = await _client.postMap(
+        '/notifications/$notificationId/read',
+        accessToken: accessToken,
+      );
+      return (response['unread_count'] as num?)?.toInt();
+    }
+  }
+
+  Future<int?> markAllNotificationsRead({required String accessToken}) async {
+    try {
+      final response = await _client.postMap(
+        '/students/me/notifications/read-all',
+        accessToken: accessToken,
+      );
+      return (response['unread_count'] as num?)?.toInt();
+    } catch (_) {
+      final response = await _client.postMap(
+        '/notifications/read-all',
+        accessToken: accessToken,
+      );
+      return (response['unread_count'] as num?)?.toInt();
+    }
+  }
 
   Future<List<StudentScheduledLecture>> fetchScheduledLectures({
     required String accessToken,
@@ -195,7 +251,8 @@ class StudentApi {
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
     return raw
         .map(
-          (item) => StudentCompletedLecture.fromJson(item as Map<String, dynamic>),
+          (item) =>
+              StudentCompletedLecture.fromJson(item as Map<String, dynamic>),
         )
         .toList(growable: false);
   }
@@ -224,7 +281,8 @@ class StudentApi {
     final raw = response['items'] as List<dynamic>? ?? <dynamic>[];
     return raw
         .map(
-          (item) => StudentDoubtThreadSummary.fromJson(item as Map<String, dynamic>),
+          (item) =>
+              StudentDoubtThreadSummary.fromJson(item as Map<String, dynamic>),
         )
         .toList(growable: false);
   }
@@ -262,10 +320,14 @@ class StudentApi {
     required String accessToken,
     required String doubtId,
     DateTime? since,
+    String? sinceId,
   }) async {
     final query = <String, dynamic>{};
     if (since != null) {
       query['since'] = since.toUtc().toIso8601String();
+    }
+    if (sinceId != null && sinceId.trim().isNotEmpty) {
+      query['since_id'] = sinceId.trim();
     }
 
     final response = await _client.getMap(
@@ -294,6 +356,32 @@ class StudentApi {
     );
     return StudentDoubtMessage.fromJson(response);
   }
+
+  Future<StudentSuggestionThreadDetail> fetchSuggestionMessages({
+    required String accessToken,
+    int limit = 300,
+    int offset = 0,
+  }) async {
+    final response = await _client.getMap(
+      '/students/me/suggestions/messages',
+      accessToken: accessToken,
+      queryParameters: {'limit': limit, 'offset': offset},
+    );
+    return StudentSuggestionThreadDetail.fromJson(response);
+  }
+
+  Future<StudentSuggestionMessage> sendSuggestionMessage({
+    required String accessToken,
+    required String message,
+  }) async {
+    final response = await _client.postMap(
+      '/students/me/suggestions/messages',
+      accessToken: accessToken,
+      body: {'message': message},
+    );
+    return StudentSuggestionMessage.fromJson(response);
+  }
+
   Future<List<StudentAssessmentItem>> fetchTests({
     required String accessToken,
     String? assessmentType,

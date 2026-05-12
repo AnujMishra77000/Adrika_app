@@ -10,13 +10,23 @@ class ContentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def list_active_banners(self, *, at_time: datetime, limit: int) -> list[Banner]:
+    async def list_active_banners(
+        self,
+        *,
+        at_time: datetime,
+        limit: int | None = None,
+    ) -> list[Banner]:
         stmt = (
             select(Banner)
-            .where(Banner.active_from <= at_time, Banner.active_to >= at_time)
+            .where(
+                Banner.is_active.is_(True),
+                Banner.active_from <= at_time,
+                Banner.active_to >= at_time,
+            )
             .order_by(Banner.priority.desc(), Banner.active_from.desc())
-            .limit(limit)
         )
+        if limit is not None and limit > 0:
+            stmt = stmt.limit(limit)
         return (await self.session.execute(stmt)).scalars().all()
 
     async def get_daily_thought(self, *, for_date: date) -> DailyThought | None:

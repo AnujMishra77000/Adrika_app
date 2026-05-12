@@ -26,6 +26,13 @@ Future<T> _withStudentSessionGuard<T>(
   }
 }
 
+void _invalidateStudentNotificationSlices(WidgetRef ref) {
+  ref.invalidate(studentNotificationsProvider);
+  ref.invalidate(studentDashboardProvider);
+  ref.invalidate(studentHomeSummaryProvider);
+  ref.invalidate(studentAnnouncementsProvider);
+}
+
 DateTime? _parseDate(String value) {
   if (value.isEmpty) {
     return null;
@@ -49,6 +56,42 @@ bool _isPracticeAssessmentType(String type) {
 
 bool _isPendingAssessment(StudentAssessmentItem item) {
   return item.availability == "scheduled" || item.availability == "live";
+}
+
+const Duration _studentNotificationWindow = Duration(hours: 24);
+
+List<StudentNotificationItem> _recentStudentNotifications(
+  Iterable<StudentNotificationItem> items,
+) {
+  final now = DateTime.now();
+  final filtered = items.where((item) {
+    final timestamp = item.timestamp;
+    if (timestamp == null) {
+      return false;
+    }
+    final age = now.difference(timestamp);
+    if (age.isNegative) {
+      // Tolerate small client/server clock drift.
+      return age.abs() <= const Duration(minutes: 5);
+    }
+    return age <= _studentNotificationWindow;
+  }).toList(growable: false);
+
+  filtered.sort((a, b) {
+    final aTs = a.timestamp;
+    final bTs = b.timestamp;
+    if (aTs == null && bTs == null) {
+      return 0;
+    }
+    if (aTs == null) {
+      return 1;
+    }
+    if (bTs == null) {
+      return -1;
+    }
+    return bTs.compareTo(aTs);
+  });
+  return filtered;
 }
 
 final studentProfileProvider = FutureProvider<StudentProfile>((ref) async {
@@ -77,6 +120,16 @@ final studentHomeworkProvider =
   return _withStudentSessionGuard(
     ref,
     (token) => ref.watch(studentApiProvider).fetchHomework(accessToken: token),
+  );
+});
+
+final studentCompletedLecturesProvider =
+    FutureProvider<List<StudentCompletedLecture>>((ref) async {
+  return _withStudentSessionGuard(
+    ref,
+    (token) => ref
+        .watch(studentApiProvider)
+        .fetchCompletedLectures(accessToken: token, limit: 200),
   );
 });
 
@@ -231,10 +284,64 @@ final studentNotificationsProvider =
     FutureProvider<List<StudentNotificationItem>>((ref) async {
   return _withStudentSessionGuard(
     ref,
-    (token) =>
-        ref.watch(studentApiProvider).fetchNotifications(accessToken: token),
+    (token) async {
+      final items = await ref.watch(studentApiProvider).fetchNotifications(
+            accessToken: token,
+            limit: 100,
+            sinceHours: 24,
+          );
+      return _recentStudentNotifications(items);
+    },
   );
 });
+
+Future<int?> markStudentNotificationRead(
+  WidgetRef ref, {
+  required String notificationId,
+}) async {
+  final token = ref.read(authControllerProvider).accessToken;
+  if (token == null || token.isEmpty) {
+    throw StateError("Missing access token");
+  }
+
+  int? unreadCount;
+  try {
+    unreadCount = await ref.read(studentApiProvider).markNotificationRead(
+          accessToken: token,
+          notificationId: notificationId,
+        );
+  } on AppException catch (error) {
+    if (error.statusCode == 401) {
+      await ref.read(authControllerProvider.notifier).clearSessionLocal();
+    }
+    rethrow;
+  }
+
+  _invalidateStudentNotificationSlices(ref);
+  return unreadCount;
+}
+
+Future<int?> markAllStudentNotificationsRead(WidgetRef ref) async {
+  final token = ref.read(authControllerProvider).accessToken;
+  if (token == null || token.isEmpty) {
+    throw StateError("Missing access token");
+  }
+
+  int? unreadCount;
+  try {
+    unreadCount = await ref
+        .read(studentApiProvider)
+        .markAllNotificationsRead(accessToken: token);
+  } on AppException catch (error) {
+    if (error.statusCode == 401) {
+      await ref.read(authControllerProvider.notifier).clearSessionLocal();
+    }
+    rethrow;
+  }
+
+  _invalidateStudentNotificationSlices(ref);
+  return unreadCount;
+}
 
 final studentAssessmentsProvider =
     FutureProvider<List<StudentAssessmentItem>>((ref) async {
@@ -303,19 +410,77 @@ final studentHomeSummaryProvider =
     final dashboardFuture = api.fetchDashboard(accessToken: token);
     final noticesFuture = api.fetchNotices(accessToken: token, limit: 8);
     final notificationsFuture =
-        api.fetchNotifications(accessToken: token, limit: 12);
+        api.fetchNotifications(accessToken: token, limit: 100, sinceHours: 24);
     final attendanceFuture = api.fetchAttendanceSummary(accessToken: token);
+    final bannersFuture = api.fetchContentBanners(accessToken: token);
     final homeworkFuture = api.fetchHomework(accessToken: token, limit: 20);
     final assessmentsFuture = api.fetchTests(accessToken: token, limit: 100);
     final scheduledLecturesFuture =
         api.fetchScheduledLectures(accessToken: token, limit: 100);
 
-    final profile = await profileFuture;
-    final dashboard = await dashboardFuture;
-    final notices = await noticesFuture;
-    final notifications = await notificationsFuture;
-    final attendanceRaw = await attendanceFuture;
-    final homework = await homeworkFuture;
+    StudentProfile profile;
+    try {
+      profile = await profileFuture;
+    } catch (_) {
+      profile = const StudentProfile(
+        studentId: '',
+        userId: '',
+        fullName: 'Student',
+        admissionNo: '',
+        rollNo: '',
+      );
+    }
+
+    StudentDashboard dashboard;
+    try {
+      dashboard = await dashboardFuture;
+    } catch (_) {
+      dashboard = const StudentDashboard(
+        unreadNotifications: 0,
+        pendingHomeworkCount: 0,
+        attendancePercentage: 0,
+        upcomingTestsCount: 0,
+        serverTimezone: 'Asia/Kolkata',
+        serverNowIst: null,
+        serverMinuteOfDay: null,
+      );
+    }
+
+    List<StudentNotice> notices;
+    try {
+      notices = await noticesFuture;
+    } catch (_) {
+      notices = const <StudentNotice>[];
+    }
+
+    List<StudentNotificationItem> notifications;
+    try {
+      notifications = _recentStudentNotifications(await notificationsFuture);
+    } catch (_) {
+      notifications = const <StudentNotificationItem>[];
+    }
+
+    Map<String, dynamic> attendanceRaw;
+    try {
+      attendanceRaw = await attendanceFuture;
+    } catch (_) {
+      attendanceRaw = const <String, dynamic>{};
+    }
+
+    List<StudentContentBanner> banners;
+    try {
+      banners = await bannersFuture;
+    } catch (_) {
+      banners = const <StudentContentBanner>[];
+    }
+
+    List<StudentHomework> homework;
+    try {
+      homework = await homeworkFuture;
+    } catch (_) {
+      homework = const <StudentHomework>[];
+    }
+
     List<StudentAssessmentItem> assessments;
     try {
       assessments = await assessmentsFuture;
@@ -338,15 +503,29 @@ final studentHomeSummaryProvider =
       dashboardAttendancePercent: dashboard.attendancePercentage,
     );
 
-    final now = DateTime.now();
+    final syncedAt = DateTime.now();
+    final localMinuteOfDay = (syncedAt.hour * 60) + syncedAt.minute;
+    var serverMinuteOfDay = dashboard.serverMinuteOfDay ?? localMinuteOfDay;
+    serverMinuteOfDay %= 1440;
+    if (serverMinuteOfDay < 0) {
+      serverMinuteOfDay += 1440;
+    }
+
+    var minuteDelta = serverMinuteOfDay - localMinuteOfDay;
+    if (minuteDelta > 720) {
+      minuteDelta -= 1440;
+    } else if (minuteDelta < -720) {
+      minuteDelta += 1440;
+    }
+
+    final now = syncedAt.add(Duration(minutes: minuteDelta));
     final today = DateTime(now.year, now.month, now.day);
 
     final scheduledLectureItems = scheduledLectures
         .where((item) => item.status == 'scheduled')
         .where((item) => item.scheduledAt != null)
         .toList(growable: false)
-      ..sort((a, b) =>
-          (a.scheduledAt ?? now).compareTo(b.scheduledAt ?? now));
+      ..sort((a, b) => (a.scheduledAt ?? now).compareTo(b.scheduledAt ?? now));
 
     final todayScheduledLectures = scheduledLectureItems
         .where((item) => _isSameDay(item.scheduledAt!, today))
@@ -427,12 +606,48 @@ final studentHomeSummaryProvider =
           : "No active practice tests right now",
     );
 
+    final completedTests = assessments
+        .where(
+          (item) =>
+              item.isCompleted && item.score != null && item.totalMarks > 0,
+        )
+        .toList(growable: false);
+
+    final completedTestsPercentages = completedTests
+        .map((item) => ((item.score ?? 0) / item.totalMarks) * 100)
+        .toList(growable: false);
+
+    final overallAveragePercent = completedTestsPercentages.isEmpty
+        ? 0.0
+        : completedTestsPercentages.reduce((a, b) => a + b) /
+            completedTestsPercentages.length;
+
+    final weekStart = now.subtract(const Duration(days: 7));
+    final weeklyCompleted = completedTests.where((item) {
+      final stamp = item.endsAt ?? item.startsAt;
+      return stamp != null && stamp.isAfter(weekStart);
+    }).toList(growable: false);
+
+    final weeklyPercentages = weeklyCompleted
+        .map((item) => ((item.score ?? 0) / item.totalMarks) * 100)
+        .toList(growable: false);
+
+    final weeklyAveragePercent = weeklyPercentages.isEmpty
+        ? overallAveragePercent
+        : weeklyPercentages.reduce((a, b) => a + b) / weeklyPercentages.length;
+
+    final combinedScore =
+        (attendance.attendancePercent * 0.45) + (overallAveragePercent * 0.55);
+
     final progress = StudentProgressSummary(
       attendancePercent: attendance.attendancePercent,
-      scorePercent: attendance.attendancePercent,
-      trendLabel: attendance.attendancePercent >= 75
-          ? "Steady learning momentum"
-          : "Focus on attendance to improve outcomes",
+      scorePercent: combinedScore.clamp(0, 100),
+      weeklyScorePercent: weeklyAveragePercent.clamp(0, 100),
+      overallScorePercent: overallAveragePercent.clamp(0, 100),
+      completedTestsCount: completedTests.length,
+      trendLabel: combinedScore >= 75
+          ? "Strong performance across attendance and tests"
+          : "Boost test attempts to raise your performance score",
     );
 
     final holidayDate = DateTime(now.year, now.month, now.day + 6);
@@ -445,7 +660,7 @@ final studentHomeSummaryProvider =
     final quickActions = <StudentQuickActionItem>[
       const StudentQuickActionItem(
         id: "notices",
-        title: "Notices",
+        title: "Notice",
         route: "/student/notices",
         iconKey: "notice",
         accentColor: Color(0xFFF9B86A),
@@ -481,6 +696,14 @@ final studentHomeSummaryProvider =
         accentColor: Color(0xFFB6A4FF),
         badgeCount: practiceAvailableCount,
       ),
+      StudentQuickActionItem(
+        id: "suggestion_box",
+        title: "Suggestion Box",
+        route: "/student/chat",
+        iconKey: "suggestion",
+        accentColor: Color(0xFF67B5E2),
+        badgeCount: notifications.where((item) => !item.isRead).length,
+      ),
     ];
 
     const doubtCta = StudentDoubtCtaData(
@@ -500,10 +723,12 @@ final studentHomeSummaryProvider =
             kind: "Lecture",
             title: lecture.topic,
             subtitle: lecture.subjectName.isEmpty
-                ? (lecture.teacherName.isEmpty ? "Lecture" : lecture.teacherName)
+                ? (lecture.teacherName.isEmpty
+                    ? "Lecture"
+                    : lecture.teacherName)
                 : "${lecture.subjectName} • ${lecture.teacherName}",
-            scheduledAt:
-                lecture.scheduledAt ?? DateTime(now.year, now.month, now.day, 9, 0),
+            scheduledAt: lecture.scheduledAt ??
+                DateTime(now.year, now.month, now.day, 9, 0),
             route: "/student/lectures/today",
           ),
         );
@@ -518,8 +743,8 @@ final studentHomeSummaryProvider =
           subtitle: lecture.subjectName.isEmpty
               ? (lecture.teacherName.isEmpty ? "Lecture" : lecture.teacherName)
               : "${lecture.subjectName} • ${lecture.teacherName}",
-          scheduledAt:
-              lecture.scheduledAt ?? DateTime(now.year, now.month, now.day, 9, 0),
+          scheduledAt: lecture.scheduledAt ??
+              DateTime(now.year, now.month, now.day, 9, 0),
           route: "/student/lectures/upcoming",
         ),
       );
@@ -586,6 +811,7 @@ final studentHomeSummaryProvider =
     return StudentHomeSummary(
       profile: profile,
       dashboard: dashboard,
+      banners: banners,
       notifications: notifications,
       scheduledLectures: scheduledLectures,
       announcements: announcements,
@@ -598,6 +824,9 @@ final studentHomeSummaryProvider =
       quickActions: quickActions,
       todaySchedule: scheduleItems.take(7).toList(growable: false),
       doubtCta: doubtCta,
+      serverMinuteOfDay: serverMinuteOfDay,
+      serverSyncedAt: syncedAt,
+      serverTimezone: dashboard.serverTimezone,
     );
   });
 });

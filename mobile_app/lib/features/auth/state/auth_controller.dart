@@ -253,6 +253,7 @@ class AuthController extends StateNotifier<AuthState> {
     required String gender,
     required String qualification,
     required String specialization,
+    required String teaching,
     String? schoolCollege,
     required String contactNumber,
     required String password,
@@ -274,6 +275,7 @@ class AuthController extends StateNotifier<AuthState> {
         qualification: qualification,
         specialization: specialization,
         schoolCollege: schoolCollege,
+        teaching: teaching,
         contactNumber: contactNumber,
         password: password,
         confirmPassword: confirmPassword,
@@ -298,6 +300,50 @@ class AuthController extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Registration failed. Please try again.',
+        clearInfo: true,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> resetForgottenPassword({
+    required String phone,
+    required String newPassword,
+    required String confirmPassword,
+    required String role,
+  }) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearInfo: true,
+    );
+
+    try {
+      await _api.resetForgottenPassword(
+        phone: phone,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+        role: role,
+      );
+
+      state = state.copyWith(
+        isLoading: false,
+        infoMessage:
+            'Password reset successful. Please login with your new password.',
+        clearError: true,
+      );
+      return true;
+    } on AppException catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: error.message,
+        clearInfo: true,
+      );
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Password reset failed. Please try again.',
         clearInfo: true,
       );
       return false;

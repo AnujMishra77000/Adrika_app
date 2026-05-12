@@ -7,8 +7,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/network/app_exception.dart';
 import '../models/student_assessment_models.dart';
 import '../state/student_providers.dart';
+import 'widgets/student_fade_slide_in.dart';
 import 'widgets/student_home_states.dart';
 import 'widgets/student_page_background.dart';
+import 'widgets/student_section_header.dart';
 
 enum StudentAssessmentViewType { practice, online }
 
@@ -17,9 +19,12 @@ String _formatDateTime(DateTime? value) {
     return 'Not scheduled';
   }
   final local = value.toLocal();
+  final day = local.day.toString().padLeft(2, '0');
+  final month = local.month.toString().padLeft(2, '0');
+  final year = local.year.toString();
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
-  return '${local.day}/${local.month}/${local.year} $hour:$minute';
+  return '$day/$month/$year $hour:$minute';
 }
 
 String _durationLabel(int minutes) {
@@ -54,7 +59,7 @@ Color _statusColor(String availability) {
     case 'scheduled':
       return const Color(0xFF60A5FA);
     case 'completed':
-      return const Color(0xFFA78BFA);
+      return const Color(0xFF16A34A);
     case 'missed':
       return const Color(0xFFF97316);
     default:
@@ -91,17 +96,32 @@ class StudentAssessmentListScreen extends ConsumerWidget {
         ? ref.watch(studentPracticeTestsProvider)
         : ref.watch(studentOnlineTestsProvider);
 
+    final title = _bucketTitle(type);
     return Scaffold(
-      backgroundColor: const Color(0xFF130C2C),
+      backgroundColor: StudentQuickAccessTheme.scaffold,
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
-        title: Text(_bucketTitle(type)),
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                StudentQuickAccessTheme.appBarStart,
+                StudentQuickAccessTheme.appBarEnd,
+              ],
+            ),
+          ),
+        ),
+        title: Text(title),
       ),
       body: Stack(
         children: [
-          const StudentPageBackgroundLayer(),
+          const StudentQuickAccessBackgroundLayer(),
           listAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => StudentHomeErrorList(
@@ -113,19 +133,6 @@ class StudentAssessmentListScreen extends ConsumerWidget {
               },
             ),
             data: (items) {
-              if (items.isEmpty) {
-                return ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-                  children: [
-                    StudentHomeEmptyState(
-                      title: 'No ${_bucketTitle(type).toLowerCase()} yet',
-                      subtitle:
-                          'Assigned tests will appear here automatically.',
-                    ),
-                  ],
-                );
-              }
-
               return RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(studentAssessmentsProvider);
@@ -133,15 +140,36 @@ class StudentAssessmentListScreen extends ConsumerWidget {
                   ref.invalidate(studentOnlineTestsProvider);
                   await ref.read(studentAssessmentsProvider.future);
                 },
-                child: ListView.separated(
+                child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return _AssessmentListCard(item: item);
-                  },
+                  children: [
+                    const StudentSectionHeader(
+                      title: 'Available Tests',
+                      subtitle:
+                          'Open any test to view schedule, marks, and attempt details.',
+                      titleColor: Color(0xFFECE8FF),
+                      subtitleColor: Color(0xFFB6B1D6),
+                    ),
+                    const SizedBox(height: 10),
+                    if (items.isEmpty)
+                      StudentHomeEmptyState(
+                        title: 'No ${_bucketTitle(type).toLowerCase()} yet',
+                        subtitle:
+                            'Assigned tests will appear here automatically once published.',
+                      )
+                    else
+                      ...List.generate(items.length, (index) {
+                        final item = items[index];
+                        return StudentFadeSlideIn(
+                          delayMs: 70 + (index * 30),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _AssessmentListCard(item: item),
+                          ),
+                        );
+                      }),
+                  ],
                 ),
               );
             },
@@ -160,27 +188,30 @@ class _AssessmentListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _statusColor(item.availability);
+    final isCompleted = item.availability == 'completed';
+
     return Material(
       color: Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () => context.push('/student/tests/${item.id}'),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF231544),
-                Color(0xFF1A1E4B),
-                Color(0xFF162A57),
-              ],
-            ),
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                blurRadius: 14,
+                spreadRadius: -9,
+                offset: const Offset(0, 7),
+              ),
+            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -192,36 +223,44 @@ class _AssessmentListCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: const Color(0xFFF8F6FF),
+                              color: const Color(0xFF111827),
                               fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              height: 1.15,
                             ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
+                        horizontal: 9,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(999),
-                        color: color.withValues(alpha: 0.18),
-                        border:
-                            Border.all(color: color.withValues(alpha: 0.45)),
+                        color: isCompleted
+                            ? const Color(0xFF16A34A)
+                            : color.withValues(alpha: 0.16),
+                        border: Border.all(
+                          color: isCompleted
+                              ? const Color(0xFF15803D)
+                              : color.withValues(alpha: 0.45),
+                        ),
                       ),
                       child: Text(
                         _statusLabel(item.availability),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: color,
+                              color: isCompleted ? Colors.white : color,
                               fontWeight: FontWeight.w700,
+                              fontSize: 10.8,
                             ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
                 Wrap(
-                  spacing: 8,
+                  spacing: 7,
                   runSpacing: 6,
                   children: [
                     _MetaPill(
@@ -243,7 +282,7 @@ class _AssessmentListCard extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
@@ -252,14 +291,15 @@ class _AssessmentListCard extends StatelessWidget {
                             ? 'Starts: ${_formatDateTime(item.startsAt)}'
                             : 'Ends: ${_formatDateTime(item.endsAt)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFFCBD5E1),
+                              color: const Color(0xFF64748B),
+                              fontSize: 10.8,
                             ),
                       ),
                     ),
                     const Icon(
                       Icons.arrow_forward_ios_rounded,
-                      color: Color(0xFFC7BFFF),
-                      size: 16,
+                      color: Color(0xFF94A3B8),
+                      size: 14,
                     ),
                   ],
                 ),
@@ -334,16 +374,30 @@ class _StudentAssessmentDetailScreenState
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF130C2C),
+      backgroundColor: StudentQuickAccessTheme.scaffold,
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                StudentQuickAccessTheme.appBarStart,
+                StudentQuickAccessTheme.appBarEnd,
+              ],
+            ),
+          ),
+        ),
         title: const Text('Test Overview'),
       ),
       body: Stack(
         children: [
-          const StudentPageBackgroundLayer(),
+          const StudentQuickAccessBackgroundLayer(),
           detailAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => StudentHomeErrorList(
@@ -537,22 +591,23 @@ class _MetaPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: Colors.white.withValues(alpha: 0.08),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+        color: const Color(0xFFF8FAFC),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: const Color(0xFFB9C6FF)),
-          const SizedBox(width: 6),
+          Icon(icon, size: 13, color: const Color(0xFF475569)),
+          const SizedBox(width: 5),
           Text(
             text,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: const Color(0xFFE7E4FF),
+                  color: const Color(0xFF334155),
                   fontWeight: FontWeight.w600,
+                  fontSize: 10.6,
                 ),
           ),
         ],
@@ -723,16 +778,30 @@ class _StudentAssessmentAttemptScreenState
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF130C2C),
+      backgroundColor: StudentQuickAccessTheme.scaffold,
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                StudentQuickAccessTheme.appBarStart,
+                StudentQuickAccessTheme.appBarEnd,
+              ],
+            ),
+          ),
+        ),
         title: const Text('Live Test'),
       ),
       body: Stack(
         children: [
-          const StudentPageBackgroundLayer(),
+          const StudentQuickAccessBackgroundLayer(),
           attemptAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => StudentHomeErrorList(
@@ -1091,16 +1160,30 @@ class StudentAssessmentResultScreen extends ConsumerWidget {
         ref.watch(studentAssessmentAttemptDetailProvider(attemptId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF130C2C),
+      backgroundColor: StudentQuickAccessTheme.scaffold,
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                StudentQuickAccessTheme.appBarStart,
+                StudentQuickAccessTheme.appBarEnd,
+              ],
+            ),
+          ),
+        ),
         title: const Text('Test Result'),
       ),
       body: Stack(
         children: [
-          const StudentPageBackgroundLayer(),
+          const StudentQuickAccessBackgroundLayer(),
           attemptAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => StudentHomeErrorList(

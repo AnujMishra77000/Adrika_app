@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'student_home_palette.dart';
+import 'student_page_background.dart';
 import 'student_surface_card.dart';
 
 class StudentHomeLoadingList extends StatelessWidget {
@@ -59,6 +60,8 @@ class StudentHomeEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StudentSurfaceCard(
+      backgroundColor: StudentQuickAccessTheme.surfaceAlt,
+      borderColor: StudentQuickAccessTheme.surfaceBorder,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -66,14 +69,14 @@ class StudentHomeEmptyState extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: StudentHomePalette.textPrimary,
+                  color: StudentQuickAccessTheme.textPrimary,
                 ),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: StudentHomePalette.textMuted,
+                  color: StudentQuickAccessTheme.textSecondary,
                 ),
           ),
         ],
@@ -99,19 +102,25 @@ class StudentHomeErrorList extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       children: [
         StudentSurfaceCard(
-          borderColor: const Color(0xFFFFD3D9),
+          backgroundColor: StudentQuickAccessTheme.surfaceAlt,
+          borderColor: const Color(0x66EF9A9A),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Unable to load student home',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: StudentHomePalette.danger,
+                      color: const Color(0xFFFFB4BC),
                       fontWeight: FontWeight.w700,
                     ),
               ),
               const SizedBox(height: 8),
-              Text(message),
+              Text(
+                message,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: StudentQuickAccessTheme.textSecondary,
+                    ),
+              ),
               const SizedBox(height: 14),
               FilledButton.icon(
                 onPressed: onRetry,
@@ -137,7 +146,7 @@ class _SkeletonBox extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(StudentUiRadius.card),
-        color: const Color(0xFFE9EEF6),
+        color: const Color(0x3D8F85B9),
       ),
     );
   }

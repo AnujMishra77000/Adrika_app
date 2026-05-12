@@ -8,6 +8,7 @@ from app.db.session import get_db_session
 from app.services.content_service import ContentService
 from app.services.dashboard_service import DashboardService
 from app.services.lecture_schedule_service import LectureScheduleService
+from app.services.student_home_service import StudentHomeService
 from app.utils.pagination import build_meta
 
 router = APIRouter(prefix="/students/me", tags=["students"])
@@ -63,6 +64,20 @@ async def list_scheduled_lectures(
     )
     return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
 
+
+
+
+@router.get("/home/summary")
+async def home_summary(
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    current_user=Depends(get_current_user),
+    student_profile=Depends(get_current_student_profile),
+) -> dict:
+    return await StudentHomeService(session, cache).get_summary(
+        user_id=current_user.id,
+        student_profile=student_profile,
+    )
 
 @router.get("/content")
 async def content(

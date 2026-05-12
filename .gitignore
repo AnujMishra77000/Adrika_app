@@ -13,6 +13,12 @@ dist/
 # Flutter
 .dart_tool/
 .build/
+mobile_app/android/app/google-services.json
+mobile_app/ios/Runner/GoogleService-Info.plist
+
+# Firebase / service account secrets
+backend/keys/
+*-firebase-adminsdk-*.json
 
 # OS
 .DS_Store

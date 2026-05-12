@@ -34,24 +34,31 @@ abstract final class StudentHomePalette {
 }
 
 abstract final class StudentUiRadius {
-  static const double card = 18;
-  static const double cardLarge = 24;
+  static const double card = 16;
+  static const double cardLarge = 20;
   static const double chip = 999;
 }
 
 abstract final class StudentUiSpacing {
-  static const EdgeInsets page = EdgeInsets.fromLTRB(16, 14, 16, 20);
-  static const EdgeInsets card = EdgeInsets.all(14);
-  static const double sectionGap = 16;
-  static const double cardGap = 10;
+  static const EdgeInsets page = EdgeInsets.fromLTRB(14, 12, 14, 16);
+  static const EdgeInsets card = EdgeInsets.all(12);
+  static const double sectionGap = 12;
+  static const double cardGap = 8;
 }
 
 abstract final class StudentUiShadow {
   static const List<BoxShadow> card = [
     BoxShadow(
-      color: Color(0x0D0F172A),
-      blurRadius: 14,
+      color: Color(0x120F172A),
+      blurRadius: 18,
       offset: Offset(0, 8),
+      spreadRadius: -10,
+    ),
+    BoxShadow(
+      color: Color(0x080F172A),
+      blurRadius: 6,
+      offset: Offset(0, 2),
+      spreadRadius: -4,
     ),
   ];
 }

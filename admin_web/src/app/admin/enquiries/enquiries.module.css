@@ -1,0 +1,211 @@
+.root {
+  display: grid;
+  gap: 12px;
+}
+
+.header {
+  border: 1px solid #ddd1f8;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #fcf9ff 0%, #f3ecff 100%);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2e1f4c;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: #6f5f94;
+  font-size: 0.9rem;
+}
+
+.error,
+.success {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.error {
+  background: #ffe5e5;
+  border: 1px solid #ffbcbc;
+  color: #9c1d1d;
+}
+
+.success {
+  background: #e7fbe9;
+  border: 1px solid #bce8c1;
+  color: #156233;
+}
+
+.card {
+  border: 1px solid #ddd1f8;
+  border-radius: 14px;
+  padding: 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(80, 49, 141, 0.08);
+}
+
+.cardTitle {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  color: #3a2760;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  font-size: 0.8rem;
+  color: #604b8f;
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  border: 1px solid #dbcdf8;
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: #fff;
+}
+
+.fieldWide {
+  grid-column: span 2;
+}
+
+.infoStrip {
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #e1d5fb;
+  background: #f8f3ff;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #4f3c7a;
+}
+
+.actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.listHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.searchField {
+  display: grid;
+  gap: 6px;
+  min-width: 320px;
+}
+
+.searchField span {
+  font-size: 0.8rem;
+  color: #604b8f;
+  font-weight: 600;
+}
+
+.searchField input {
+  border: 1px solid #dbcdf8;
+  border-radius: 8px;
+  padding: 8px 9px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.mainCell {
+  font-weight: 600;
+}
+
+.subCell {
+  color: #7e6fa4;
+  font-size: 0.78rem;
+}
+
+.editLayout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+.timeline {
+  display: grid;
+  gap: 8px;
+}
+
+.timelineRow {
+  border: 1px solid #e1d5fb;
+  border-radius: 10px;
+  background: #faf7ff;
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.timelineStatus {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #432b78;
+  text-transform: capitalize;
+}
+
+.timelineMeta {
+  font-size: 0.75rem;
+  color: #6b5b90;
+}
+
+.timelineNote {
+  font-size: 0.8rem;
+  color: #4f3c7a;
+}
+
+@media (max-width: 1200px) {
+  .formGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fieldWide {
+    grid-column: auto;
+  }
+
+  .listHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchField {
+    min-width: 0;
+  }
+}

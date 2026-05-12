@@ -1,0 +1,991 @@
+.root {
+  display: grid;
+  gap: 14px;
+}
+
+.header {
+  border: 1px solid #ddd1f8;
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, #fefcff 0%, #f5eeff 100%);
+}
+
+.brandWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoMark {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid #ddcff8;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 14px rgba(80, 49, 141, 0.08);
+  overflow: hidden;
+}
+
+.logoMark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  padding: 2px;
+}
+
+.title {
+  margin: 0;
+  color: #352158;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: #6f5f94;
+  font-size: 0.92rem;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(190px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  min-width: 982px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #c8b7ee transparent;
+}
+
+.card {
+  border: 1px solid #ddd1f8;
+  border-radius: 14px;
+  padding: 10px;
+  background: linear-gradient(180deg, #fff 0%, #f8f3ff 100%);
+  box-shadow: 0 8px 20px rgba(80, 49, 141, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 126px;
+}
+
+.cardGreen {
+  border-color: #9fefbb;
+  background: linear-gradient(180deg, #deffe8 0%, #c3ffd6 100%);
+}
+
+.cardBlue {
+  border-color: #9fd8ff;
+  background: linear-gradient(180deg, #e1f5ff 0%, #c4ebff 100%);
+}
+
+.cardYellow {
+  border-color: #efd95f;
+  background: linear-gradient(180deg, #fff7c2 0%, #ffef87 100%);
+}
+
+.cardOrange {
+  border-color: #f4b06d;
+  background: linear-gradient(180deg, #ffe8cf 0%, #ffd0a5 100%);
+}
+
+.cardPurple {
+  border-color: #c7a6ff;
+  background: linear-gradient(180deg, #f0e5ff 0%, #dfcbff 100%);
+}
+
+.cardLabel {
+  color: #4a376f;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.cardValue {
+  color: #2a1b45;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.cardHint {
+  color: #59477f;
+  font-size: 0.76rem;
+  min-height: 30px;
+  flex: 1;
+}
+
+.cardAction,
+.cardActionGhost {
+  margin-top: auto;
+  width: fit-content;
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.cardAction {
+  border: 1px solid #c4b0ef;
+  background: #ffffff;
+  color: #4e3192;
+}
+
+.cardAction:hover {
+  background: #f3ebff;
+}
+
+.cardActionGhost {
+  border: 1px solid #dbcef8;
+  background: #f4ecff;
+  color: #6f5f94;
+}
+
+.cardGrid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.cardGrid::-webkit-scrollbar-thumb {
+  background: #c8b7ee;
+  border-radius: 999px;
+}
+
+.cardGrid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.enquirySection {
+  border: 1px solid #ddd1f8;
+  border-radius: 14px;
+  padding: 12px;
+  background: linear-gradient(180deg, #fff 0%, #f8f3ff 100%);
+  box-shadow: 0 8px 20px rgba(80, 49, 141, 0.08);
+}
+
+.enquiryHeading {
+  margin: 0 0 10px;
+  color: #3a2860;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.enquiryStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.enquiryStatCard {
+  border: 1px solid #e4d7fa;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+  display: grid;
+  gap: 8px;
+}
+
+.enquiryStatLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #4a376f;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.enquiryDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.enquiryDotInitial {
+  background: #facc15;
+}
+
+.enquiryDotFollowUp {
+  background: #fb923c;
+}
+
+.enquiryDotConfirmed {
+  background: #22c55e;
+}
+
+.enquiryStatValue {
+  width: fit-content;
+  min-width: 44px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #d8c8f8;
+  background: #f8f2ff;
+  color: #2a1b45;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+@media (max-width: 820px) {
+  .enquiryStatsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.syllabusSection {
+  border: 1px solid #ddd1f8;
+  border-radius: 14px;
+  padding: 12px;
+  background: linear-gradient(180deg, #fff 0%, #f8f3ff 100%);
+  box-shadow: 0 8px 20px rgba(80, 49, 141, 0.08);
+  display: grid;
+  gap: 12px;
+}
+
+.syllabusHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.syllabusHeading {
+  margin: 0;
+  color: #3a2860;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.syllabusSubheading {
+  margin: 0;
+  color: #6b5d8f;
+  font-size: 0.8rem;
+}
+
+.scopeTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scopeTab {
+  border: 1px solid #d8c8f8;
+  border-radius: 999px;
+  background: #fff;
+  color: #4a376f;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scopeTabActive {
+  background: #ece0ff;
+  color: #3c2472;
+  border-color: #baa0ef;
+}
+
+.syllabusSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.piePanel {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.pieChart {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.16);
+}
+
+.pieChart::after {
+  content: "";
+  position: absolute;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #ece2ff;
+}
+
+.pieChart span {
+  position: relative;
+  z-index: 1;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #312151;
+}
+
+.pieCaption {
+  margin: 0;
+  color: #5f4f84;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.syllabusMeta {
+  display: grid;
+  gap: 5px;
+  color: #4d3c73;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.chartShell {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.chartArea {
+  position: relative;
+  border: 1px solid #e3d7fb;
+  border-radius: 12px;
+  padding: 8px;
+  background: #fff;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.chartScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.chartSvg {
+  display: block;
+}
+
+.axisLine {
+  stroke: #cbb8f4;
+  stroke-width: 1.4;
+}
+
+.gridLine {
+  stroke: #eadfff;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.gridLineBaseline {
+  stroke: #bba5ec;
+  stroke-width: 2;
+}
+
+.yAxisTickText {
+  fill: #6b5d8f;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.barRect {
+  fill: #5a50e8;
+  stroke: #4f46e5;
+  stroke-opacity: 0.14;
+}
+
+.barValueText {
+  fill: #3f2c69;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.xAxisLabelText {
+  fill: #5a4c80;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.emptySyllabus {
+  margin: 0;
+  color: #6f5f94;
+  font-size: 0.82rem;
+}
+
+.revenueSection {
+  border: 1px solid #ddd1f8;
+  border-radius: 14px;
+  padding: 12px;
+  background: linear-gradient(180deg, #fff 0%, #f8f3ff 100%);
+  box-shadow: 0 8px 20px rgba(80, 49, 141, 0.08);
+  display: grid;
+  gap: 12px;
+}
+
+.revenueHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.revenueHeading {
+  margin: 0;
+  color: #3a2860;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.revenueMonthPicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.revenueMonthPicker label {
+  color: #5e4f83;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.revenueMonthPicker select {
+  border: 1px solid #d9c9f8;
+  border-radius: 8px;
+  background: #fff;
+  color: #47356f;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.revenueSummaryRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.revenueSummaryCard {
+  border: 1px solid #e4d7fa;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+}
+
+.revenueSummaryLabel {
+  color: #5f4f84;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.revenueSummaryValue {
+  margin-top: 4px;
+  color: #2e1f4e;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.revenueLegend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #55457d;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.legendSwatchCollected {
+  background: #4f46e5;
+}
+
+.legendSwatchPending {
+  background: #f59e0b;
+}
+
+.revenueChartShell {
+  display: block;
+}
+
+.revenueChartArea {
+  position: relative;
+  border: 1px solid #e3d7fb;
+  border-radius: 12px;
+  padding: 8px;
+  background: #fff;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.revenueChartScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.revenueChartSvg {
+  display: block;
+}
+
+.revenueSelectedBand {
+  fill: rgba(79, 70, 229, 0.08);
+}
+
+.revenueCollectedBar {
+  fill: #4f46e5;
+  stroke: #4338ca;
+  stroke-opacity: 0.18;
+}
+
+.revenuePendingBar {
+  fill: #f59e0b;
+  stroke: #d97706;
+  stroke-opacity: 0.18;
+}
+
+@media (max-width: 900px) {
+  .chartArea {
+    width: 100%;
+    max-width: none;
+  }
+
+  .chartScroll {
+    width: 100%;
+  }
+
+  .revenueSummaryRow {
+    grid-template-columns: 1fr;
+  }
+
+  .revenueChartArea {
+    width: 100%;
+    max-width: none;
+  }
+
+  .revenueChartScroll {
+    width: 100%;
+  }
+}
+
+
+.trackerSection {
+  border: 1px solid #ddd1f8;
+  border-radius: 14px;
+  padding: 12px;
+  background: linear-gradient(180deg, #fff 0%, #f8f3ff 100%);
+  box-shadow: 0 8px 20px rgba(80, 49, 141, 0.08);
+  display: grid;
+  gap: 12px;
+}
+
+.trackerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trackerTitle {
+  margin: 0;
+  color: #3a2860;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.trackerSubTitle {
+  margin: 4px 0 0;
+  color: #6b5d8f;
+  font-size: 0.8rem;
+}
+
+.trackerControls {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(260px, 1fr);
+  gap: 10px;
+}
+
+.trackerField {
+  display: grid;
+  gap: 6px;
+}
+
+.trackerField span {
+  color: #5e4f83;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.trackerField input {
+  border: 1px solid #d9c9f8;
+  border-radius: 8px;
+  background: #fff;
+  color: #47356f;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.trackerMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trackerDayChip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d8c8f8;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #f5eefe;
+  color: #4e3f76;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.trackerCountRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trackerCountCard {
+  border: 1px solid #e4d7fa;
+  border-radius: 10px;
+  background: #fff;
+  padding: 7px 10px;
+  display: grid;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.trackerCountLabel {
+  color: #66588b;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.trackerCountValue {
+  color: #2e1f4e;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.trackerList {
+  display: grid;
+  gap: 8px;
+}
+
+.trackerCard {
+  border: 1px solid #e2d6f9;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+  display: grid;
+  gap: 8px;
+}
+
+.trackerCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trackerCardTitle {
+  margin: 0;
+  color: #342457;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.trackerCardTopic {
+  margin: 0;
+  color: #5f4f84;
+  font-size: 0.8rem;
+}
+
+.trackerCardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.trackerItemLabel {
+  color: #7a6aa0;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.trackerItemValue {
+  margin-top: 2px;
+  color: #3a2a5f;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.trackerBadgeDone,
+.trackerBadgeScheduled {
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.trackerBadgeDone {
+  color: #14532d;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.trackerBadgeScheduled {
+  color: #854d0e;
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+
+.trackerEmpty {
+  margin: 0;
+  color: #6f5f94;
+  font-size: 0.82rem;
+}
+
+.trackerRecentDays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.trackerRecentChip {
+  border: 1px solid #ddd0f8;
+  background: #fff;
+  color: #4b3a70;
+  border-radius: 10px;
+  padding: 8px;
+  display: grid;
+  gap: 2px;
+  font-size: 0.7rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trackerRecentChip strong {
+  font-size: 0.76rem;
+  color: #2f2050;
+}
+
+.trackerRecentChipActive {
+  border-color: #bda4ef;
+  background: #f3ebff;
+}
+
+.trackerSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.trackerSummaryCard {
+  border: 1px solid #e4d9fb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.trackerSummaryCard span {
+  color: #695a8e;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.trackerSummaryCard strong {
+  color: #2e1f4d;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.trackerSplitGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.trackerPanel {
+  border: 1px solid #e2d5f9;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.trackerPanelTitle {
+  margin: 0;
+  color: #37275a;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.trackerMiniGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.trackerMiniCard {
+  border: 1px solid #e9defc;
+  border-radius: 10px;
+  background: #fcfaff;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.trackerMiniCard h4 {
+  margin: 0;
+  color: #352458;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.trackerMiniStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(100px, 1fr));
+  gap: 4px;
+}
+
+.trackerMiniStats span {
+  color: #5f4f84;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.trackerMiniHint {
+  margin: 0;
+  color: #7a6ba0;
+  font-size: 0.68rem;
+}
+
+.trackerClassGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.trackerClassCard {
+  border: 1px solid #e8dcfb;
+  border-radius: 10px;
+  background: #fcfaff;
+  padding: 8px;
+  display: grid;
+  gap: 2px;
+}
+
+.trackerClassCard strong {
+  color: #352558;
+  font-size: 0.74rem;
+}
+
+.trackerClassCard span {
+  color: #65558a;
+  font-size: 0.68rem;
+}
+
+.trackerSimpleList {
+  display: grid;
+  gap: 6px;
+}
+
+.trackerSimpleRow {
+  border: 1px solid #eadffc;
+  border-radius: 10px;
+  padding: 8px;
+  background: #fcfaff;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.trackerSimpleRow strong {
+  color: #30214e;
+  font-size: 0.76rem;
+}
+
+.trackerSimpleRow span {
+  color: #64558a;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 900px) {
+  .trackerControls {
+    grid-template-columns: 1fr;
+  }
+
+  .trackerSummaryGrid {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+  }
+
+  .trackerSplitGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .trackerMiniGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .trackerClassGrid {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+
+  .trackerCardGrid {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+
+  .trackerSimpleRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .trackerSummaryGrid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .trackerClassGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .trackerCardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .trackerSimpleRow {
+    grid-template-columns: 1fr;
+  }
+}

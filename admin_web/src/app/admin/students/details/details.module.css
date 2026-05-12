@@ -1,0 +1,267 @@
+.pageRoot {
+  display: grid;
+  gap: 14px;
+}
+
+.pageHeader {
+  display: grid;
+  gap: 6px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.pageSubtitle {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.panelCard {
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.cardTitle {
+  margin: 0 0 12px;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.filterField > span {
+  font-weight: 600;
+  font-size: 0.84rem;
+  color: #56407c;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.detailsTable {
+  min-width: 980px;
+}
+
+.detailsTable th {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #5c418d;
+  background: rgba(168, 129, 255, 0.09);
+}
+
+.studentCell {
+  min-width: 220px;
+}
+
+.studentName {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #332151;
+}
+
+.studentMeta {
+  margin-top: 4px;
+  font-size: 0.78rem;
+}
+
+.classValue {
+  font-weight: 600;
+  color: #3a295d;
+}
+
+.streamValue {
+  margin-top: 2px;
+  font-size: 0.78rem;
+}
+
+.metricStack {
+  display: grid;
+  gap: 4px;
+  min-width: 165px;
+}
+
+.metricRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #473468;
+}
+
+.metricRow strong {
+  color: #2f1f4f;
+}
+
+.metricHighlight {
+  border-top: 1px dashed #d8c8f5;
+  padding-top: 4px;
+}
+
+.feeMeta {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #3f2d61;
+}
+
+.feeStatus {
+  display: inline-flex;
+  margin-top: 7px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.feePaid {
+  color: #0f6d34;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.feePending {
+  color: #92400e;
+  background: #ffedd5;
+  border: 1px solid #fdba74;
+}
+
+.actionStack {
+  display: grid;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.primaryButton {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-align: center;
+  background: linear-gradient(180deg, #d9b8ff 0%, #c79eff 100%) !important;
+  border: 1px solid #b783ff !important;
+  color: #2f1654 !important;
+  box-shadow: 0 6px 12px rgba(139, 92, 246, 0.18);
+}
+
+.primaryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 14px rgba(139, 92, 246, 0.22);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.summaryCard {
+  border-radius: 12px;
+  border: 1px solid #dfcff9;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f1ff 100%);
+  padding: 12px;
+}
+
+.summaryTitle {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #5a4287;
+}
+
+.summaryValue {
+  margin-top: 8px;
+  font-size: 1.44rem;
+  font-weight: 800;
+  color: #2e1a4c;
+}
+
+.summarySubtle {
+  margin-top: 4px;
+  color: #6b5a89;
+  font-size: 0.8rem;
+}
+
+.progressTrack {
+  margin-top: 8px;
+  height: 10px;
+  border-radius: 999px;
+  background: #ebe1ff;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.twoColGrid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 12px;
+}
+
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.listStack {
+  display: grid;
+  gap: 8px;
+}
+
+.listItem {
+  border: 1px solid #e5dafc;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fff;
+}
+
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.listTitle {
+  font-weight: 600;
+  color: #2f1f4f;
+}
+
+.listMeta {
+  font-size: 0.76rem;
+}
+
+@media (max-width: 1120px) {
+  .twoColGrid,
+  .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+}

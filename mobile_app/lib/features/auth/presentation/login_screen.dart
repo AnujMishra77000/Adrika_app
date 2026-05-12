@@ -54,6 +54,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   _AuthFlow _flow = _AuthFlow.none;
   String _studentStream = 'science';
   String _teacherGender = 'male';
+  String _teacherTeaching = '11-science';
   XFile? _studentPhoto;
   XFile? _teacherPhoto;
 
@@ -227,7 +228,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password and confirm password must match.')),
+        const SnackBar(
+            content: Text('Password and confirm password must match.')),
       );
       return;
     }
@@ -260,6 +262,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             gender: _teacherGender,
             qualification: _teacherQualificationController.text.trim(),
             specialization: _teacherSpecializationController.text.trim(),
+            teaching: _teacherTeaching,
             schoolCollege: _teacherSchoolCollegeController.text.trim().isEmpty
                 ? null
                 : _teacherSchoolCollegeController.text.trim(),
@@ -289,6 +292,109 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _openForgotPasswordDialog() async {
+    final phone = _phoneController.text.trim();
+    if (phone.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter your contact number first.')),
+      );
+      return;
+    }
+
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Reset Password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: newPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'New Password',
+                  hintText: '6-8 chars, letters + numbers',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm Password',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final newPassword = newPasswordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
+    final passwordPattern = RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,8}$');
+
+    if (!passwordPattern.hasMatch(newPassword)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'Password must be 6-8 characters with letters and numbers.')),
+      );
+      return;
+    }
+
+    if (newPassword != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Password and confirm password must match.')),
+      );
+      return;
+    }
+
+    final role = _activeFlow == _AuthFlow.teacherLogin ? 'teacher' : 'student';
+    final success =
+        await ref.read(authControllerProvider.notifier).resetForgottenPassword(
+              phone: phone,
+              newPassword: newPassword,
+              confirmPassword: confirmPassword,
+              role: role,
+            );
+
+    if (!mounted) {
+      return;
+    }
+
+    final auth = ref.read(authControllerProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? (auth.infoMessage ??
+                  'Password reset successful. Please login again.')
+              : (auth.errorMessage ?? 'Password reset failed.'),
+        ),
+      ),
+    );
+  }
+
   _AuthFlow get _activeFlow {
     if (_flow != _AuthFlow.none) {
       return _flow;
@@ -297,10 +403,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   bool get _isLoginFlow =>
-      _activeFlow == _AuthFlow.studentLogin || _activeFlow == _AuthFlow.teacherLogin;
+      _activeFlow == _AuthFlow.studentLogin ||
+      _activeFlow == _AuthFlow.teacherLogin;
 
   bool get _isStudentFlow =>
-      _activeFlow == _AuthFlow.studentLogin || _activeFlow == _AuthFlow.studentRegister;
+      _activeFlow == _AuthFlow.studentLogin ||
+      _activeFlow == _AuthFlow.studentRegister;
 
   String get _screenTitle {
     switch (_activeFlow) {
@@ -385,7 +493,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Choose one option to continue.',
+          'Choose login. Credentials are issued by admin.',
         ),
         const SizedBox(height: 4),
         const Text(
@@ -403,20 +511,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           label: 'Teacher Login',
           icon: Icons.menu_book_rounded,
           onTap: () => _goTo('/login/teacher', _AuthFlow.teacherLogin),
-        ),
-        const SizedBox(height: 18),
-        _actionButton(
-          label: 'Student Registration',
-          icon: Icons.how_to_reg_rounded,
-          onTap: () => _goTo('/register/student', _AuthFlow.studentRegister),
-          outlined: true,
-        ),
-        const SizedBox(height: 10),
-        _actionButton(
-          label: 'Teacher Registration',
-          icon: Icons.person_add_alt_1_rounded,
-          onTap: () => _goTo('/register/teacher', _AuthFlow.teacherRegister),
-          outlined: true,
         ),
       ],
     );
@@ -465,6 +559,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   )
                 : Text(_primaryButtonLabel),
           ),
+          if (_isLoginFlow) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: auth.isLoading ? null : _openForgotPasswordDialog,
+                child: const Text('Forgot password?'),
+              ),
+            ),
+          ],
           if (auth.errorMessage != null) ...[
             const SizedBox(height: 10),
             Text(
@@ -556,7 +660,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
       validator: (value) {
-        if ((value ?? '').length < 8) {
+        final text = (value ?? '').trim();
+        if (text.isEmpty) {
+          return 'Password is required';
+        }
+        if (!_isLoginFlow && text.length < 8) {
           return 'Password must be at least 8 characters';
         }
         return null;
@@ -703,6 +811,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           controller: _teacherSpecializationController,
           decoration: const InputDecoration(labelText: 'Specialization'),
           validator: _requiredValidator,
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          initialValue: _teacherTeaching,
+          decoration: const InputDecoration(labelText: 'Teaching'),
+          items: const [
+            DropdownMenuItem(value: '10-common', child: Text('10th')),
+            DropdownMenuItem(value: '11-science', child: Text('11th Science')),
+            DropdownMenuItem(
+                value: '11-commerce', child: Text('11th Commerce')),
+            DropdownMenuItem(value: '12-science', child: Text('12th Science')),
+            DropdownMenuItem(
+                value: '12-commerce', child: Text('12th Commerce')),
+          ],
+          onChanged: (value) {
+            if (value == null) {
+              return;
+            }
+            setState(() {
+              _teacherTeaching = value;
+            });
+          },
         ),
         const SizedBox(height: 12),
         TextFormField(

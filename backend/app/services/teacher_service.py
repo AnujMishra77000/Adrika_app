@@ -1,5 +1,6 @@
 from datetime import UTC, date, datetime
 
+from fastapi import HTTPException, status as http_status
 from redis.asyncio import Redis
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,9 +12,11 @@ from app.cache.keys import (
     teacher_notices_key,
 )
 from app.cache.utils import delete_keys, get_json, set_json
+from app.core.assessment_type import require_assessment_type
 from app.core.exceptions import NotFoundException
-from app.db.models.academic import CompletedLecture, StudentProfile, Subject, TeacherBatchAssignment
-from app.db.models.enums import NotificationType
+from app.core.timezone import to_app_timezone
+from app.db.models.academic import CompletedLecture, StudentProfile, Subject, TeacherBatchAssignment, TeacherSalaryLedger, TeacherSalaryProfile
+from app.db.models.enums import AssessmentType, NotificationType
 from app.db.models.notification import Notification
 from app.db.models.user import User
 from app.repositories.doubt_repo import DoubtRepository
@@ -41,6 +44,7 @@ class TeacherService:
             "qualification": teacher_profile.qualification,
             "specialization": teacher_profile.specialization,
             "school_college": teacher_profile.school_college,
+            "teaching_scope": teacher_profile.teaching_scope,
             "address": teacher_profile.address,
             "photo_url": teacher_profile.photo_url,
         }
@@ -169,6 +173,40 @@ class TeacherService:
             completed_at=payload.completed_at or datetime.now(UTC),
         )
         self.session.add(lecture)
+        await self.session.flush()
+
+        salary_profile = (
+            await self.session.execute(
+                select(TeacherSalaryProfile).where(TeacherSalaryProfile.teacher_id == teacher_id)
+            )
+        ).scalar_one_or_none()
+        hourly_rate = float(salary_profile.hourly_rate) if salary_profile else 0.0
+        duration_minutes = 60
+        amount = round((hourly_rate * duration_minutes) / 60, 2)
+
+        existing_ledger = (
+            await self.session.execute(
+                select(TeacherSalaryLedger).where(TeacherSalaryLedger.completed_lecture_id == lecture.id)
+            )
+        ).scalar_one_or_none()
+        if existing_ledger is None:
+            self.session.add(
+                TeacherSalaryLedger(
+                    teacher_id=teacher_id,
+                    schedule_id=None,
+                    completed_lecture_id=lecture.id,
+                    class_level=lecture.class_level,
+                    stream=lecture.stream,
+                    subject_id=lecture.subject_id,
+                    topic=lecture.topic,
+                    lecture_duration_minutes=duration_minutes,
+                    hourly_rate=hourly_rate,
+                    amount=amount,
+                    attendance_date=(lecture.completed_at or datetime.now(UTC)).date(),
+                    completed_at=lecture.completed_at or datetime.now(UTC),
+                )
+            )
+
         await self.session.commit()
         await self.session.refresh(lecture)
 
@@ -293,10 +331,16 @@ class TeacherService:
     ) -> tuple[list[dict], int]:
         batch_ids = await self.repo.assigned_batch_ids(teacher_id=teacher_id)
         subject_ids = await self.repo.assigned_subject_ids(teacher_id=teacher_id)
+        normalized_assessment_type: AssessmentType | None = None
+        if assessment_type:
+            try:
+                normalized_assessment_type = require_assessment_type(assessment_type)
+            except ValueError as exc:
+                raise HTTPException(status_code=http_status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
         rows, total = await self.repo.list_assessments_for_teacher(
             batch_ids=batch_ids,
             subject_ids=subject_ids,
-            assessment_type=assessment_type,
+            assessment_type=normalized_assessment_type,
             status=status,
             subject_id=subject_id,
             limit=limit,
@@ -371,8 +415,8 @@ class TeacherService:
                 "topic": row.topic,
                 "status": row.status.value if hasattr(row.status, "value") else str(row.status),
                 "priority": row.priority,
-                "created_at": row.created_at,
-                "updated_at": row.updated_at,
+                "created_at": to_app_timezone(row.created_at),
+                "updated_at": to_app_timezone(row.updated_at),
             }
             for row in rows
         ], total
@@ -431,7 +475,7 @@ class TeacherService:
                 "description": doubt.description,
                 "status": doubt.status.value if hasattr(doubt.status, "value") else str(doubt.status),
                 "priority": doubt.priority,
-                "created_at": doubt.created_at,
+                "created_at": to_app_timezone(doubt.created_at),
             },
             "messages": [
                 {
@@ -439,7 +483,7 @@ class TeacherService:
                     "sender_user_id": message.sender_user_id,
                     "sender_name": sender_name_map.get(message.sender_user_id or "", "Unknown"),
                     "message": message.message,
-                    "created_at": message.created_at,
+                    "created_at": to_app_timezone(message.created_at),
                 }
                 for message in messages
             ],
@@ -451,6 +495,7 @@ class TeacherService:
         teacher_id: str,
         doubt_id: str,
         since: datetime | None,
+        since_id: str | None,
     ) -> list[dict]:
         subject_ids = await self.repo.assigned_subject_ids(teacher_id=teacher_id)
         doubt = await self.doubt_repo.get_doubt_for_teacher(
@@ -461,7 +506,11 @@ class TeacherService:
         if not doubt:
             raise NotFoundException("Doubt not found")
 
-        messages = await self.doubt_repo.list_messages(doubt_id=doubt.id, since=since)
+        messages = await self.doubt_repo.list_messages(
+            doubt_id=doubt.id,
+            since=since,
+            since_id=since_id,
+        )
         sender_ids = [message.sender_user_id for message in messages if message.sender_user_id]
         sender_name_map: dict[str, str] = {}
         if sender_ids:
@@ -478,7 +527,7 @@ class TeacherService:
                 "sender_user_id": message.sender_user_id,
                 "sender_name": sender_name_map.get(message.sender_user_id or "", "Unknown"),
                 "message": message.message,
-                "created_at": message.created_at,
+                "created_at": to_app_timezone(message.created_at),
             }
             for message in messages
         ]
@@ -543,7 +592,7 @@ class TeacherService:
             "sender_user_id": saved.sender_user_id,
             "sender_name": sender_name,
             "message": saved.message,
-            "created_at": saved.created_at,
+            "created_at": to_app_timezone(saved.created_at),
         }
 
     async def update_doubt_status(self, *, teacher_id: str, doubt_id: str, status: str) -> dict:
@@ -564,5 +613,5 @@ class TeacherService:
         return {
             "id": updated.id,
             "status": updated.status.value if hasattr(updated.status, "value") else str(updated.status),
-            "updated_at": updated.updated_at,
+            "updated_at": to_app_timezone(updated.updated_at),
         }

@@ -7,7 +7,7 @@ from app.db.models.academic import Batch, Standard, Subject, TeacherBatchAssignm
 from app.db.models.assessment import Assessment, AssessmentAssignment
 from app.db.models.content import Notice, NoticeRead, NoticeTarget
 from app.db.models.doubt import Doubt, DoubtMessage
-from app.db.models.enums import AssessmentStatus, HomeworkStatus, NoticeStatus
+from app.db.models.enums import AssessmentStatus, AssessmentType, HomeworkStatus, NoticeStatus
 from app.db.models.homework import Homework, HomeworkTarget
 
 
@@ -212,7 +212,7 @@ class TeacherRepository:
         *,
         batch_ids: list[str],
         subject_ids: list[str],
-        assessment_type: str | None,
+        assessment_type: AssessmentType | None,
         status: str | None,
         subject_id: str | None,
         limit: int,

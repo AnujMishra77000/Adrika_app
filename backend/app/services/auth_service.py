@@ -4,8 +4,8 @@ from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.exceptions import UnauthorizedException
-from app.core.security import create_access_token, create_refresh_token, decode_token, verify_password
+from app.core.exceptions import ForbiddenException, NotFoundException, UnauthorizedException
+from app.core.security import create_access_token, create_refresh_token, decode_token, get_password_hash, verify_password
 from app.db.models.enums import RegistrationRequestStatus, UserStatus
 from app.repositories.registration_repo import RegistrationRepository
 from app.repositories.user_repo import UserRepository
@@ -114,3 +114,29 @@ class AuthService:
     async def logout_all(self, *, user_id: str) -> None:
         await self.user_repo.revoke_all_sessions_for_user(user_id)
         await self.session.commit()
+
+    async def reset_password_by_phone(
+        self,
+        *,
+        phone: str,
+        new_password: str,
+        role: str = "student",
+    ) -> dict:
+        normalized_phone = "".join(ch for ch in phone if ch.isdigit())
+        user = await self.user_repo.get_by_identifier(normalized_phone)
+        if not user or (user.phone or "") != normalized_phone:
+            raise NotFoundException("No account found for this contact number")
+
+        role_codes = {code.lower() for code in self.user_repo.user_role_codes(user)}
+        if role.lower() not in role_codes:
+            raise ForbiddenException("No matching account role found for this contact number")
+
+        user.password_hash = get_password_hash(new_password)
+        await self.user_repo.revoke_all_sessions_for_user(user.id)
+        await self.session.commit()
+
+        return {
+            "message": "Password reset successful. Please login again.",
+            "phone": normalized_phone,
+            "role": role.lower(),
+        }

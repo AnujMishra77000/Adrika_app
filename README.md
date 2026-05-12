@@ -17,3 +17,8 @@ Phase 1 backend foundation started with:
 - PostgreSQL + Redis + Celery integrations
 - Alembic migrations + seed script
 - pytest baseline
+
+## Push notification setup
+
+- Android FCM setup guide:
+  - [docs/firebase_push_setup.md](docs/firebase_push_setup.md)

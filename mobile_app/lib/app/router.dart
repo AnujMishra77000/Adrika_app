@@ -48,11 +48,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             const LoginScreen(mode: AuthEntryMode.teacherLogin),
       ),
       GoRoute(
-        path: '/register/student',
-        builder: (context, state) =>
-            const LoginScreen(mode: AuthEntryMode.studentRegister),
-      ),
-      GoRoute(
         path: '/register/teacher',
         builder: (context, state) =>
             const LoginScreen(mode: AuthEntryMode.teacherRegister),
@@ -63,8 +58,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/student/notices',
-        pageBuilder: (context, state) =>
-            _studentTransitionPage(state, const StudentNoticesScreen()),
+        pageBuilder: (context, state) => _studentTransitionPage(
+          state,
+          const StudentNoticesScreen(showStandaloneHeader: true),
+        ),
       ),
       GoRoute(
         path: '/student/notifications',

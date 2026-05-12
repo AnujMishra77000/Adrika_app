@@ -37,108 +37,150 @@ class StudentAnnouncementCard extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: isUnread
-                  ? const [Color(0xFF3FAF3D), Color(0xFF2B8F2A)]
-                  : const [Color(0xFF57BE54), Color(0xFF3D9F3A)],
+              colors: [
+                Color(0xFFF7F8FB),
+                Color(0xFFE5E8EE),
+                Color(0xFFD9DEE7),
+              ],
+              stops: [0.06, 0.52, 1.0],
             ),
-            border: Border.all(
-              color:
-                  isUnread ? const Color(0xFFAEF0A8) : const Color(0xFFC9F5C5),
-            ),
+            border: Border.all(color: const Color(0xFFCBD2DE), width: 1.1),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1C6E1A).withValues(alpha: 0.24),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: const Color(0xFF111827).withValues(alpha: 0.16),
+                blurRadius: 20,
+                spreadRadius: -11,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.72),
+                blurRadius: 8,
+                spreadRadius: -6,
+                offset: const Offset(0, -2),
               ),
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(
-                          alpha: isUnread ? 0.95 : 0.75,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight:
-                                  isUnread ? FontWeight.w700 : FontWeight.w600,
-                              color: Colors.white,
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F4FA),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(color: const Color(0xFFD5DBE6)),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.campaign_rounded,
+                    color: isUnread
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF475569),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF0B1220),
+                                  ),
                             ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _formatTime(item.timestamp),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.92),
                           ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  item.previewText,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatTime(item.timestamp),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: const Color(0xFF1F2937),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ],
                       ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        item.source.toUpperCase(),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                      const SizedBox(height: 6),
+                      Text(
+                        item.previewText,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF17212F),
+                              fontWeight: FontWeight.w500,
                             ),
                       ),
-                    ),
-                    const Spacer(),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                  ],
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE6EAF2),
+                              borderRadius: BorderRadius.circular(999),
+                              border:
+                                  Border.all(color: const Color(0xFFCBD4E1)),
+                            ),
+                            child: Text(
+                              item.source.toUpperCase(),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'View Details',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: const Color(0xFF0B1220),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 18,
+                            color: Color(0xFF0B1220),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

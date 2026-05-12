@@ -71,6 +71,7 @@ class RegistrationReviewService:
                     "qualification": teacher_profile.qualification,
                     "specialization": teacher_profile.specialization,
                     "school_college": teacher_profile.school_college,
+                    "teaching_scope": teacher_profile.teaching_scope,
                     "address": teacher_profile.address,
                     "photo_url": teacher_profile.photo_url,
                 }

@@ -12,6 +12,7 @@ from app.api.v1 import (
     parents,
     results,
     students,
+    suggestions,
     teachers,
 )
 
@@ -26,5 +27,6 @@ api_router.include_router(attendance.router)
 api_router.include_router(assessments.router)
 api_router.include_router(results.router)
 api_router.include_router(doubts.router)
+api_router.include_router(suggestions.router)
 api_router.include_router(notifications.router)
 api_router.include_router(admin.router)

@@ -78,8 +78,12 @@ class Banner(Base, UUIDPKMixin, TimestampMixin):
     active_to: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_popup: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    __table_args__ = (Index("ix_banners_active_window", "active_from", "active_to"),)
+    __table_args__ = (
+        Index("ix_banners_active_window", "active_from", "active_to"),
+        Index("ix_banners_is_active_window", "is_active", "active_from", "active_to"),
+    )
 
 
 class DailyThought(Base, UUIDPKMixin, TimestampMixin):

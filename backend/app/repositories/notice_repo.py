@@ -14,7 +14,7 @@ class NoticeRepository:
 
     @staticmethod
     def _grade_target_ids(*, class_level: int | None, stream: str | None) -> list[str]:
-        if class_level not in {10, 11, 12}:
+        if class_level not in {6, 7, 8, 9, 10, 11, 12}:
             return []
 
         target_ids = [str(class_level)]

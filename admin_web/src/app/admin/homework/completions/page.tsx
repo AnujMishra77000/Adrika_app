@@ -93,7 +93,7 @@ export default function AdminHomeworkCompletionsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [homeworkId, setHomeworkId] = useState('');
-  const [classLevel, setClassLevel] = useState<'all' | '10' | '11' | '12'>('all');
+  const [classLevel, setClassLevel] = useState<'all' | '6' | '7' | '8' | '9' | '10' | '11' | '12'>('all');
   const [stream, setStream] = useState<'all' | 'science' | 'commerce'>('all');
   const [search, setSearch] = useState('');
 
@@ -208,8 +208,12 @@ export default function AdminHomeworkCompletionsPage() {
 
           <label className={styles.field}>
             <span className={styles.fieldLabel}>Class</span>
-            <select className={styles.select} value={classLevel} onChange={(e) => setClassLevel(e.target.value as 'all' | '10' | '11' | '12')}>
+            <select className={styles.select} value={classLevel} onChange={(e) => setClassLevel(e.target.value as 'all' | '6' | '7' | '8' | '9' | '10' | '11' | '12')}>
               <option value="all">All</option>
+              <option value="6">6th</option>
+              <option value="7">7th</option>
+              <option value="8">8th</option>
+              <option value="9">9th</option>
               <option value="10">10th</option>
               <option value="11">11th</option>
               <option value="12">12th</option>

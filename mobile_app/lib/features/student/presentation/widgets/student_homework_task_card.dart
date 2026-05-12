@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/student_models.dart';
 import 'student_home_palette.dart';
+import 'student_page_background.dart';
 import 'student_status_chip.dart';
 import 'student_surface_card.dart';
 
@@ -88,6 +89,8 @@ class StudentHomeworkTaskCard extends StatelessWidget {
 
     return StudentSurfaceCard(
       onTap: onTap,
+      backgroundColor: StudentQuickAccessTheme.surfaceAlt,
+      borderColor: StudentQuickAccessTheme.surfaceBorder,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -105,7 +108,7 @@ class StudentHomeworkTaskCard extends StatelessWidget {
                     Text(
                       _subjectHint(),
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: StudentHomePalette.textMuted,
+                            color: StudentQuickAccessTheme.textMuted,
                             fontWeight: FontWeight.w700,
                           ),
                     ),
@@ -114,7 +117,7 @@ class StudentHomeworkTaskCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: StudentHomePalette.textPrimary,
+                            color: StudentQuickAccessTheme.textPrimary,
                             fontWeight: FontWeight.w700,
                           ),
                     ),
@@ -150,7 +153,7 @@ class StudentHomeworkTaskCard extends StatelessWidget {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: StudentHomePalette.textSecondary,
+                  color: StudentQuickAccessTheme.textSecondary,
                 ),
           ),
           const SizedBox(height: 10),
@@ -170,7 +173,8 @@ class StudentHomeworkTaskCard extends StatelessWidget {
               if (homework.attachmentCount > 0) ...[
                 const SizedBox(width: 6),
                 StudentStatusChip(
-                  label: '${homework.attachmentCount} file${homework.attachmentCount == 1 ? '' : 's'}',
+                  label:
+                      '${homework.attachmentCount} file${homework.attachmentCount == 1 ? '' : 's'}',
                   tone: StudentChipTone.info,
                 ),
               ],
@@ -182,7 +186,7 @@ class StudentHomeworkTaskCard extends StatelessWidget {
               Text(
                 _formattedDate(),
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: StudentHomePalette.textMuted,
+                      color: StudentQuickAccessTheme.textMuted,
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -191,7 +195,7 @@ class StudentHomeworkTaskCard extends StatelessWidget {
                 const Icon(
                   Icons.attach_file_rounded,
                   size: 18,
-                  color: StudentHomePalette.textMuted,
+                  color: StudentQuickAccessTheme.textMuted,
                 ),
               ],
               const Spacer(),
@@ -199,7 +203,7 @@ class StudentHomeworkTaskCard extends StatelessWidget {
                 FilledButton.tonalIcon(
                   onPressed: submitting ? null : onSubmit,
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF2A4CA3),
+                    backgroundColor: const Color(0xFF5D3BB5),
                     foregroundColor: Colors.white,
                     visualDensity: VisualDensity.compact,
                     padding:

@@ -1,8 +1,12 @@
+from datetime import UTC, datetime
+
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cache.keys import student_dashboard_key
 from app.cache.utils import get_json, set_json
+from app.core.config import get_settings
+from app.core.timezone import to_app_timezone
 from app.repositories.assessment_repo import AssessmentRepository
 from app.repositories.attendance_repo import AttendanceRepository
 from app.repositories.homework_repo import HomeworkRepository
@@ -37,6 +41,18 @@ class DashboardService:
             return "commerce"
         return None
 
+    @staticmethod
+    def _server_time_payload() -> dict:
+        settings = get_settings()
+        now_ist = to_app_timezone(datetime.now(tz=UTC))
+        if now_ist is None:
+            now_ist = datetime.now(tz=UTC)
+        return {
+            "server_timezone": settings.app_timezone,
+            "server_now_ist": now_ist.isoformat(),
+            "server_minute_of_day": (now_ist.hour * 60) + now_ist.minute,
+        }
+
     async def get_student_dashboard(
         self,
         *,
@@ -49,7 +65,7 @@ class DashboardService:
         key = student_dashboard_key(student_id)
         cached = await get_json(self.cache, key)
         if cached:
-            return cached
+            return {**cached, **self._server_time_payload()}
 
         unread = await self.notification_repo.unread_count(user_id=user_id)
         pending_homework = await self.homework_repo.unseen_count_for_student(
@@ -73,4 +89,4 @@ class DashboardService:
         }
 
         await set_json(self.cache, key, payload, ttl_seconds=60)
-        return payload
+        return {**payload, **self._server_time_payload()}

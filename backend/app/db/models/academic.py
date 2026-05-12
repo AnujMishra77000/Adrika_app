@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -63,6 +64,7 @@ class SubjectAcademicScope(Base, UUIDPKMixin, TimestampMixin):
     class_level: Mapped[int] = mapped_column(Integer, nullable=False)
     # common -> class 10, science/commerce -> class 11/12 streams.
     stream: Mapped[str] = mapped_column(String(20), nullable=False, default="common")
+    estimated_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     __table_args__ = (
         UniqueConstraint("subject_id", "class_level", "stream", name="uq_subject_scope"),
@@ -116,10 +118,46 @@ class TeacherProfile(Base, UUIDPKMixin, TimestampMixin):
     qualification: Mapped[str | None] = mapped_column(String(255), nullable=True)
     specialization: Mapped[str | None] = mapped_column(String(255), nullable=True)
     school_college: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    teaching_scope: Mapped[str | None] = mapped_column(String(255), nullable=True)
     address: Mapped[str | None] = mapped_column(String(500), nullable=True)
     photo_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     user = relationship("User", lazy="joined")
+
+
+class TeacherSalaryProfile(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "teacher_salary_profiles"
+
+    teacher_id: Mapped[str] = mapped_column(ForeignKey("teacher_profiles.id", ondelete="CASCADE"), nullable=False, unique=True)
+    hourly_rate: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    currency: Mapped[str] = mapped_column(String(8), nullable=False, default="INR")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    __table_args__ = (
+        Index("ix_teacher_salary_profiles_teacher", "teacher_id"),
+    )
+
+
+class TeacherSalaryLedger(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "teacher_salary_ledgers"
+
+    teacher_id: Mapped[str] = mapped_column(ForeignKey("teacher_profiles.id", ondelete="CASCADE"), nullable=False)
+    schedule_id: Mapped[str | None] = mapped_column(ForeignKey("lecture_schedules.id", ondelete="SET NULL"), nullable=True, unique=True)
+    completed_lecture_id: Mapped[str | None] = mapped_column(ForeignKey("completed_lectures.id", ondelete="SET NULL"), nullable=True, unique=True)
+    class_level: Mapped[int] = mapped_column(Integer, nullable=False)
+    stream: Mapped[str] = mapped_column(String(20), nullable=False, default="common")
+    subject_id: Mapped[str | None] = mapped_column(ForeignKey("subjects.id", ondelete="SET NULL"), nullable=True)
+    topic: Mapped[str] = mapped_column(String(255), nullable=False)
+    lecture_duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=60)
+    hourly_rate: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    attendance_date: Mapped[date] = mapped_column(Date, nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index("ix_teacher_salary_ledgers_teacher_date", "teacher_id", "attendance_date"),
+        Index("ix_teacher_salary_ledgers_scope_date", "class_level", "stream", "attendance_date"),
+    )
 
 
 class TeacherBatchAssignment(Base, UUIDPKMixin, TimestampMixin):
@@ -148,6 +186,7 @@ class LectureSchedule(Base, UUIDPKMixin, TimestampMixin):
 
     topic: Mapped[str] = mapped_column(String(255), nullable=False)
     lecture_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=60)
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[LectureScheduleStatus] = mapped_column(
         Enum(LectureScheduleStatus, name="lecture_schedule_status", native_enum=False),

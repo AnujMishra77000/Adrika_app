@@ -391,6 +391,147 @@ async def test_admin_can_record_fee_payment_and_move_student_to_paid_list(client
 
 
 @pytest.mark.anyio
+async def test_admin_student_enquiries_endpoint_returns_pending_student_requests(client: AsyncClient) -> None:
+    admin_token = await _login_token(client, "admin@test.local", "Admin@123", "device-admin-student-enquiries")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = await client.get(
+        "/api/v1/admin/students/enquiries?limit=20&offset=0",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert "items" in payload
+    assert "meta" in payload
+    assert payload["meta"]["total"] >= 0
+
+
+@pytest.mark.anyio
+async def test_admin_student_details_endpoint_returns_student_analytics(client: AsyncClient) -> None:
+    admin_token = await _login_token(client, "admin@test.local", "Admin@123", "device-admin-student-details")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = await client.get(
+        "/api/v1/admin/students/details?limit=20&offset=0",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert "items" in payload
+    assert "meta" in payload
+    assert payload["meta"]["total"] >= 0
+    if payload["items"]:
+        first = payload["items"][0]
+        assert "attendance" in first
+        assert "progress" in first
+        assert "fee" in first
+        assert "subjects" in first
+
+
+@pytest.mark.anyio
+async def test_admin_student_full_profile_endpoints(client: AsyncClient) -> None:
+    admin_token = await _login_token(client, "admin@test.local", "Admin@123", "device-admin-student-full-profile")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    list_response = await client.get("/api/v1/admin/students?limit=1&offset=0", headers=headers)
+    assert list_response.status_code == 200
+    students = list_response.json()["items"]
+    assert len(students) >= 1
+    student_id = students[0]["student_id"]
+
+    profile_response = await client.get(
+        f"/api/v1/admin/students/{student_id}/full-profile",
+        headers=headers,
+    )
+    assert profile_response.status_code == 200
+    profile_payload = profile_response.json()
+    assert "student" in profile_payload
+    assert "analytics" in profile_payload
+    assert "recent_results" in profile_payload["analytics"]
+    assert "attendance_timeline" in profile_payload["analytics"]
+    assert "payment_ledger" in profile_payload["analytics"]
+
+
+@pytest.mark.anyio
+async def test_admin_can_create_student_with_fee_structure_and_initial_payment(client: AsyncClient) -> None:
+    admin_token = await _login_token(client, "admin@test.local", "Admin@123", "device-admin-student-create-fee")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    batches_response = await client.get("/api/v1/admin/batches?limit=100&offset=0", headers=headers)
+    assert batches_response.status_code == 200
+    batches = batches_response.json()["items"]
+    assert len(batches) >= 1
+    selected_batch = batches[0]
+
+    standard_name = (selected_batch.get("standard_name") or "").lower()
+    if "11" in standard_name:
+        class_level = 11
+    elif "12" in standard_name:
+        class_level = 12
+    else:
+        class_level = 10
+
+    stream: str | None = None
+    if class_level in {11, 12}:
+        stream = "science" if "science" in standard_name else "commerce"
+
+    structure_response = await client.post(
+        "/api/v1/admin/fees/structures",
+        headers=headers,
+        json={
+            "name": "Onboarding Plan",
+            "class_level": class_level,
+            "stream": stream,
+            "total_amount": 25000,
+            "installment_count": 5,
+            "description": "Used for student create flow",
+            "is_active": True,
+        },
+    )
+    assert structure_response.status_code == 200
+    structure_id = structure_response.json()["id"]
+
+    suffix = datetime.now(UTC).strftime("%H%M%S")
+    create_response = await client.post(
+        "/api/v1/admin/students",
+        headers=headers,
+        json={
+            "full_name": f"Fee Student {suffix}",
+            "email": f"fee.student.{suffix}@example.com",
+            "phone": f"90000{suffix[:5]}",
+            "password": "Student@123",
+            "admission_no": f"ADM-{suffix}",
+            "roll_no": f"R-{suffix}",
+            "batch_id": selected_batch["id"],
+            "class_name": f"{class_level}th",
+            "stream": stream if stream else "common",
+            "parent_contact_number": f"98888{suffix[:5]}",
+            "school_details": "ADR Public School",
+            "address": "Pune",
+            "fee_structure_id": structure_id,
+            "initial_fee_paid_amount": 5000,
+            "initial_fee_payment_mode": "cash",
+            "initial_fee_note": "Admission day collection",
+        },
+    )
+    assert create_response.status_code == 200
+    created = create_response.json()
+    assert created["student_id"]
+    assert created["fee_assignment"] is not None
+    assert created["initial_fee_payment"] is not None
+    assert float(created["initial_fee_payment"]["billing"]["paid_amount"]) == pytest.approx(5000.0)
+
+    assignment_response = await client.get(
+        f"/api/v1/admin/fees/students/{created['student_id']}/assignment",
+        headers=headers,
+    )
+    assert assignment_response.status_code == 200
+    billing = assignment_response.json()["billing"]
+    assert float(billing["paid_amount"]) == pytest.approx(5000.0)
+    assert float(billing["pending_amount"]) == pytest.approx(20000.0)
+
+
+@pytest.mark.anyio
 async def test_admin_homework_publish_with_attachment_reaches_student_and_marks_read(client: AsyncClient) -> None:
     admin_token = await _login_token(client, "admin@test.local", "Admin@123", "device-admin-homework")
     student_token = await _login_token(client, "student@test.local", "Student@123", "device-student-homework")
@@ -481,3 +622,67 @@ async def test_admin_homework_publish_with_attachment_reaches_student_and_marks_
     homework_items_after_read = student_homework_after_read.json()["items"]
     updated = next(item for item in homework_items_after_read if item["id"] == homework_id)
     assert updated["is_read"] is True
+
+@pytest.mark.anyio
+async def test_admin_can_delete_teacher_and_allow_fresh_reregistration(client: AsyncClient) -> None:
+    admin_token = await _login_token(client, "admin@test.local", "Admin@123", "device-admin-delete-teacher")
+    teacher_token = await _login_token(client, "teacher@test.local", "Teacher@123", "device-teacher-before-delete")
+
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    teachers_response = await client.get(
+        "/api/v1/admin/teachers?limit=100&offset=0",
+        headers=admin_headers,
+    )
+    assert teachers_response.status_code == 200
+    teachers = teachers_response.json()["items"]
+    assert len(teachers) >= 1
+
+    target = teachers[0]
+    target_phone = target.get("phone")
+    assert target_phone
+
+    delete_response = await client.delete(
+        f"/api/v1/admin/teachers/{target['teacher_id']}",
+        headers=admin_headers,
+    )
+    assert delete_response.status_code == 200
+    assert delete_response.json()["deleted"] is True
+
+    teacher_profile_response = await client.get(
+        "/api/v1/teachers/me/profile",
+        headers={"Authorization": f"Bearer {teacher_token}"},
+    )
+    assert teacher_profile_response.status_code == 401
+
+    teacher_login_after_delete = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "identifier": "teacher@test.local",
+            "password": "Teacher@123",
+            "device": {
+                "device_id": "device-teacher-after-delete",
+                "platform": "android",
+                "app_version": "1.0.0",
+            },
+        },
+    )
+    assert teacher_login_after_delete.status_code == 401
+
+    re_register_response = await client.post(
+        "/api/v1/auth/register/teacher",
+        data={
+            "name": "ReRegistered Teacher",
+            "age": "31",
+            "gender": "female",
+            "qualification": "MSc",
+            "specialization": "Physics",
+            "teaching": "12-science",
+            "school_college": "City College",
+            "contact_number": target_phone,
+            "password": "Teacher@123",
+            "confirm_password": "Teacher@123",
+            "address": "Teacher Colony",
+        },
+    )
+    assert re_register_response.status_code == 201

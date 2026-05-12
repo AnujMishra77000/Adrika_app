@@ -13,6 +13,7 @@ from app.services.registration_review_service import RegistrationReviewService
 from app.services.registration_service import RegistrationService
 from app.services.result_service import ResultService
 from app.services.student_service import StudentService
+from app.services.suggestion_service import SuggestionService
 from app.services.teacher_service import TeacherService
 from app.services.lecture_schedule_service import LectureScheduleService
 
@@ -32,6 +33,7 @@ __all__ = [
     "RegistrationService",
     "ResultService",
     "StudentService",
+    "SuggestionService",
     "TeacherService",
     "LectureScheduleService",
 ]

@@ -119,17 +119,17 @@ export default function AdminHomeworkPage() {
   const [subjectId, setSubjectId] = useState('');
   const [dueAt, setDueAt] = useState('');
   const [targetMode, setTargetMode] = useState<TargetMode>('all');
-  const [classLevel, setClassLevel] = useState<'10' | '11' | '12'>('10');
+  const [classLevel, setClassLevel] = useState<'6' | '7' | '8' | '9' | '10' | '11' | '12'>('10');
   const [stream, setStream] = useState<'science' | 'commerce'>('science');
   const [publishNow, setPublishNow] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
 
   const selectedTargetPreview = useMemo(() => {
     if (targetMode === 'all') {
-      return 'All students (10th, 11th, 12th)';
+      return 'All students (6th to 12th)';
     }
-    if (classLevel === '10') {
-      return 'Class 10';
+    if (Number(classLevel) <= 10) {
+      return 'Class ' + classLevel;
     }
     return 'Class ' + classLevel + ' ' + (stream === 'science' ? 'Science' : 'Commerce');
   }, [classLevel, stream, targetMode]);
@@ -218,8 +218,8 @@ export default function AdminHomeworkPage() {
       return [{ target_type: 'all_students', target_id: 'all' }];
     }
 
-    if (classLevel === '10') {
-      return [{ target_type: 'grade', target_id: '10' }];
+    if (Number(classLevel) <= 10) {
+      return [{ target_type: 'grade', target_id: classLevel }];
     }
 
     return [{ target_type: 'grade', target_id: classLevel + ':' + stream }];
@@ -446,9 +446,13 @@ export default function AdminHomeworkPage() {
               <select
                 className={styles.select}
                 value={classLevel}
-                onChange={(event) => setClassLevel(event.target.value as '10' | '11' | '12')}
+                onChange={(event) => setClassLevel(event.target.value as '6' | '7' | '8' | '9' | '10' | '11' | '12')}
                 disabled={targetMode !== 'grade'}
               >
+                <option value="6">6th</option>
+                <option value="7">7th</option>
+                <option value="8">8th</option>
+                <option value="9">9th</option>
                 <option value="10">10th</option>
                 <option value="11">11th</option>
                 <option value="12">12th</option>
@@ -461,7 +465,7 @@ export default function AdminHomeworkPage() {
                 className={styles.select}
                 value={stream}
                 onChange={(event) => setStream(event.target.value as 'science' | 'commerce')}
-                disabled={targetMode !== 'grade' || classLevel === '10'}
+                disabled={targetMode !== 'grade' || Number(classLevel) <= 10}
               >
                 <option value="science">Science</option>
                 <option value="commerce">Commerce</option>

@@ -173,10 +173,14 @@ class TeacherApi {
     required String accessToken,
     required String doubtId,
     DateTime? since,
+    String? sinceId,
   }) async {
     final query = <String, dynamic>{};
     if (since != null) {
       query['since'] = since.toUtc().toIso8601String();
+    }
+    if (sinceId != null && sinceId.trim().isNotEmpty) {
+      query['since_id'] = sinceId.trim();
     }
 
     final response = await _client.getMap(

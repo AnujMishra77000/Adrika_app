@@ -83,3 +83,31 @@ class DeviceRegistration(Base, UUIDPKMixin, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     __table_args__ = (Index("ix_device_reg_user_active", "user_id", "is_active"),)
+
+
+class StudentCredential(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "student_credentials"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    login_id: Mapped[str] = mapped_column(String(20), nullable=False)
+    password_plain: Mapped[str] = mapped_column(String(128), nullable=False)
+    password_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    __table_args__ = (
+        Index("ix_student_credentials_login_id", "login_id"),
+    )
+
+
+class TeacherCredential(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "teacher_credentials"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    login_id: Mapped[str] = mapped_column(String(20), nullable=False)
+    password_plain: Mapped[str] = mapped_column(String(128), nullable=False)
+    password_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    __table_args__ = (
+        Index("ix_teacher_credentials_login_id", "login_id"),
+    )

@@ -21,7 +21,7 @@ class ContentService:
 
         now = datetime.now(UTC)
         daily_thought = await self.repo.get_daily_thought(for_date=now.date())
-        banners = await self.repo.list_active_banners(at_time=now, limit=5)
+        banners = await self.repo.list_active_banners(at_time=now)
 
         payload = {
             "daily_thought": {

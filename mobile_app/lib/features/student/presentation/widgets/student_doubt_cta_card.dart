@@ -14,130 +14,101 @@ class StudentDoubtCtaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF24153F),
-            Color(0xFF1B1D44),
-            Color(0xFF15254E),
-          ],
-          stops: [0.0, 0.52, 1.0],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF36216D).withValues(alpha: 0.44),
-            blurRadius: 28,
-            spreadRadius: -7,
-            offset: const Offset(0, 12),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                blurRadius: 14,
+                spreadRadius: -9,
+                offset: const Offset(0, 7),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            Positioned(
-              left: -48,
-              top: -64,
-              child: _GlowOrb(
-                size: 210,
-                color: const Color(0xFF9A75FF).withValues(alpha: 0.28),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.help_outline_rounded,
+                  color: Color(0xFF1F2937),
+                  size: 18,
+                ),
               ),
-            ),
-            Positioned(
-              right: -32,
-              bottom: -54,
-              child: _GlowOrb(
-                size: 165,
-                color: const Color(0xFF5F80FF).withValues(alpha: 0.24),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: const Color(0xFF111827),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            height: 1.1,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      data.subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFF64748B),
+                            fontSize: 10.8,
+                            height: 1.22,
+                          ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.18),
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.help_outline_rounded,
-                      color: Color(0xFFDDDAFF),
-                    ),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: onTap,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          data.title,
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    color: const Color(0xFFF6F4FF),
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          data.subtitle,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: const Color(0xFFB7B2D7),
-                                  ),
-                        ),
-                      ],
-                    ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(width: 12),
-                  FilledButton.tonal(
-                    onPressed: onTap,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3D8F),
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text(data.actionLabel),
+                ),
+                child: Text(
+                  data.actionLabel,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GlowOrb extends StatelessWidget {
-  const _GlowOrb({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color,
-            color.withValues(alpha: 0),
-          ],
+            ],
+          ),
         ),
       ),
     );

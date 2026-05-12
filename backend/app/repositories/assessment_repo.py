@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+import re
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +13,7 @@ from app.db.models.assessment import (
     AttemptAnswer,
     QuestionBank,
 )
-from app.db.models.enums import AssessmentStatus, AttemptStatus, UserStatus
+from app.db.models.enums import AssessmentStatus, AssessmentType, AttemptStatus, UserStatus
 from app.db.models.results import Result
 from app.db.models.user import User
 
@@ -33,13 +34,10 @@ class AssessmentRepository:
     @staticmethod
     def _extract_grade(class_name: str | None, standard_name: str | None) -> int | None:
         source = f"{class_name or ''} {standard_name or ''}".lower()
-        if "10" in source:
-            return 10
-        if "11" in source:
-            return 11
-        if "12" in source:
-            return 12
-        return None
+        match = re.search(r"(6|7|8|9|10|11|12)", source)
+        if not match:
+            return None
+        return int(match.group(1))
 
     @staticmethod
     def _to_utc(value: datetime | None) -> datetime | None:
@@ -87,7 +85,7 @@ class AssessmentRepository:
         batch_id: str | None,
         class_level: int | None,
         stream: str | None,
-        assessment_type: str | None,
+        assessment_type: AssessmentType | None,
         status: str | None,
         subject_id: str | None,
         limit: int,

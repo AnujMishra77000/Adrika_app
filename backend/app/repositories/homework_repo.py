@@ -33,7 +33,7 @@ class HomeworkRepository:
             return []
 
         class_text = str(class_level).strip()
-        if class_text not in {"10", "11", "12"}:
+        if class_text not in {"6", "7", "8", "9", "10", "11", "12"}:
             return []
 
         ids = [class_text]

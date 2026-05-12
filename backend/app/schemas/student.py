@@ -15,3 +15,6 @@ class StudentDashboardDTO(BaseModel):
     pending_homework_count: int
     attendance_percentage: float
     upcoming_tests_count: int
+    server_timezone: str = "Asia/Kolkata"
+    server_now_ist: str | None = None
+    server_minute_of_day: int | None = None

@@ -26,8 +26,16 @@ class StudentSurfaceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: borderColor, width: 1.1),
         boxShadow: StudentUiShadow.card,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFFFFFF),
+            Color(0xFFFCFDFF),
+          ],
+        ),
       ),
       child: Padding(
         padding: padding,
@@ -45,6 +53,8 @@ class StudentSurfaceCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(radius),
         onTap: onTap,
+        splashColor: Colors.black.withValues(alpha: 0.04),
+        highlightColor: Colors.black.withValues(alpha: 0.02),
         child: body,
       ),
     );
@@ -70,7 +80,8 @@ class StudentIconBadge extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(11),
-        color: accent.withValues(alpha: 0.16),
+        color: const Color(0xFFF8FAFC),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
       ),
       alignment: Alignment.center,
       child: Icon(

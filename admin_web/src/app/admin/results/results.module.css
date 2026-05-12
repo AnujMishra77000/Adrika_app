@@ -1,12 +1,10 @@
 .root {
   min-height: calc(100vh - 48px);
-  background:
-    radial-gradient(980px 400px at 8% -20%, rgba(248, 206, 92, 0.18), transparent 56%),
-    radial-gradient(920px 420px at 95% -15%, rgba(82, 156, 255, 0.22), transparent 60%),
-    linear-gradient(145deg, #171034 0%, #102449 52%, #143463 100%);
+  background: linear-gradient(180deg, #fbf8ff 0%, #f3ecff 100%);
+  border: 1px solid #ddcff8;
   border-radius: 20px;
   padding: 20px;
-  color: #f7faff;
+  color: #27174d;
 }
 
 .header {
@@ -25,7 +23,7 @@
 .subtitle {
   margin-top: 8px;
   margin-bottom: 0;
-  color: rgba(219, 231, 255, 0.86);
+  color: #6f5f94;
   font-size: 14px;
 }
 

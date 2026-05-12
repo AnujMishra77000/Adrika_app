@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'student_home_palette.dart';
+import 'student_page_background.dart';
 import 'student_surface_card.dart';
 
 class StudentModuleHeader extends StatelessWidget {
@@ -20,7 +21,8 @@ class StudentModuleHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StudentSurfaceCard(
-      backgroundColor: StudentHomePalette.surfaceMuted,
+      backgroundColor: StudentQuickAccessTheme.surface,
+      borderColor: StudentQuickAccessTheme.surfaceBorder,
       child: Row(
         children: [
           StudentIconBadge(icon: icon, accent: accent),
@@ -32,17 +34,19 @@ class StudentModuleHeader extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: StudentHomePalette.textPrimary,
+                        color: StudentQuickAccessTheme.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: StudentHomePalette.textMuted,
-                      ),
-                ),
+                if (subtitle.trim().isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: StudentQuickAccessTheme.textSecondary,
+                        ),
+                  ),
+                ],
               ],
             ),
           ),

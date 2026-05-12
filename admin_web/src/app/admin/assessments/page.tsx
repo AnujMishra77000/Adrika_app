@@ -7,6 +7,7 @@ import { apiRequest } from '@/lib/api';
 import styles from './assessments.module.css';
 
 type SectionKey = 'save' | 'create' | 'assign';
+type CreateAssessmentType = 'practice_test' | 'online_test';
 
 type Subject = {
   id: string;
@@ -85,6 +86,10 @@ const SECTION_LABELS: Record<SectionKey, string> = {
 
 const AUDIENCE_OPTIONS = [
   { value: 'all', label: 'All Students' },
+  { value: '6', label: 'Class 6' },
+  { value: '7', label: 'Class 7' },
+  { value: '8', label: 'Class 8' },
+  { value: '9', label: 'Class 9' },
   { value: '10', label: 'Class 10' },
   { value: '11:science', label: 'Class 11 Science' },
   { value: '11:commerce', label: 'Class 11 Commerce' },
@@ -96,13 +101,53 @@ function cls(...items: Array<string | false | null | undefined>) {
   return items.filter(Boolean).join(' ');
 }
 
-function toInputDateTime(value: Date): string {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-  const hour = String(value.getHours()).padStart(2, '0');
-  const minute = String(value.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hour}:${minute}`;
+function nowIstInputWithOffset(offsetMinutes: number): string {
+  const target = new Date(Date.now() + offsetMinutes * 60 * 1000);
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(target).reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== 'literal') {
+      acc[part.type] = part.value;
+    }
+    return acc;
+  }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+function toUtcIsoFromIstInput(value: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value.trim());
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day) ||
+    Number.isNaN(hour) ||
+    Number.isNaN(minute)
+  ) {
+    return null;
+  }
+
+  const istOffsetMs = (5 * 60 + 30) * 60 * 1000;
+  const utcMs = Date.UTC(year, month - 1, day, hour, minute) - istOffsetMs;
+  return new Date(utcMs).toISOString();
 }
 
 function toDisplayDate(value: string | null): string {
@@ -112,7 +157,24 @@ function toDisplayDate(value: string | null): string {
   return date.toLocaleString('en-IN', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    timeZone: 'Asia/Kolkata',
   });
+}
+
+function assessmentTypeLabel(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'online_test' || normalized === 'scheduled') {
+    return 'Online Test';
+  }
+  if (
+    normalized === 'practice_test' ||
+    normalized === 'practice' ||
+    normalized === 'daily_practice' ||
+    normalized === 'subject_practice'
+  ) {
+    return 'Practice Test';
+  }
+  return value;
 }
 
 function streamRequired(classLevel: number): boolean {
@@ -193,7 +255,7 @@ export default function AdminAssessmentsPage() {
   const [createSubjectSearch, setCreateSubjectSearch] = useState('');
   const [createSubjectId, setCreateSubjectId] = useState('');
   const [createTopic, setCreateTopic] = useState('');
-  const [createType, setCreateType] = useState<'daily_practice' | 'subject_practice' | 'scheduled'>('scheduled');
+  const [createType, setCreateType] = useState<CreateAssessmentType>('online_test');
   const [createDurationMinutes, setCreateDurationMinutes] = useState('30');
   const [createAttemptLimit, setCreateAttemptLimit] = useState('1');
   const [createPassingMarks, setCreatePassingMarks] = useState('0');
@@ -201,16 +263,8 @@ export default function AdminAssessmentsPage() {
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
   const [selectedAudience, setSelectedAudience] = useState<(typeof AUDIENCE_OPTIONS)[number]['value']>('all');
-  const [assignStartsAt, setAssignStartsAt] = useState(() => {
-    const base = new Date();
-    base.setMinutes(base.getMinutes() + 10);
-    return toInputDateTime(base);
-  });
-  const [assignEndsAt, setAssignEndsAt] = useState(() => {
-    const base = new Date();
-    base.setMinutes(base.getMinutes() + 70);
-    return toInputDateTime(base);
-  });
+  const [assignStartsAt, setAssignStartsAt] = useState(() => nowIstInputWithOffset(10));
+  const [assignEndsAt, setAssignEndsAt] = useState(() => nowIstInputWithOffset(70));
   const [sendNotification, setSendNotification] = useState(true);
   const [publishNow, setPublishNow] = useState(true);
   const [paper, setPaper] = useState<AssessmentQuestionPaper | null>(null);
@@ -617,11 +671,18 @@ export default function AdminAssessmentsPage() {
           ? [{ target_type: 'all_students', target_id: 'all' }]
           : [{ target_type: 'grade', target_id: audience }];
 
+      const startsAtIso = toUtcIsoFromIstInput(assignStartsAt);
+      const endsAtIso = toUtcIsoFromIstInput(assignEndsAt);
+
+      if (!startsAtIso || !endsAtIso) {
+        throw new Error('Invalid schedule date/time. Please select valid IST date and time.');
+      }
+
       await apiRequest(`/api/v1/admin/assessments/${selectedAssessmentId}/assign`, {
         method: 'POST',
         body: JSON.stringify({
-          starts_at: new Date(assignStartsAt).toISOString(),
-          ends_at: new Date(assignEndsAt).toISOString(),
+          starts_at: startsAtIso,
+          ends_at: endsAtIso,
           targets,
           publish: publishNow,
           send_notification: sendNotification,
@@ -704,12 +765,16 @@ export default function AdminAssessmentsPage() {
                   value={newSubjectClassLevel}
                   onChange={(event) => {
                     setNewSubjectClassLevel(event.target.value);
-                    if (event.target.value === '10') {
+                    if (Number(event.target.value) <= 10) {
                       setNewSubjectStream('');
                     }
                   }}
                   required
                 >
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
                   <option value="10">10</option>
                   <option value="11">11</option>
                   <option value="12">12</option>
@@ -780,11 +845,15 @@ export default function AdminAssessmentsPage() {
                     value={saveClassLevel}
                     onChange={(event) => {
                       setSaveClassLevel(event.target.value);
-                      if (event.target.value === '10') setSaveStream('');
+                      if (Number(event.target.value) <= 10) setSaveStream('');
                     }}
                     required
                   >
-                    <option value="10">10</option>
+                    <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
                     <option value="11">11</option>
                     <option value="12">12</option>
                   </select>
@@ -934,6 +1003,10 @@ export default function AdminAssessmentsPage() {
                 <span className={styles.fieldLabel}>Class</span>
                 <select className={styles.select} value={filterClassLevel} onChange={(e) => setFilterClassLevel(e.target.value)}>
                   <option value="">All</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
                   <option value="10">10</option>
                   <option value="11">11</option>
                   <option value="12">12</option>
@@ -1057,11 +1130,15 @@ export default function AdminAssessmentsPage() {
                     value={createClassLevel}
                     onChange={(event) => {
                       setCreateClassLevel(event.target.value);
-                      if (event.target.value === '10') setCreateStream('');
+                      if (Number(event.target.value) <= 10) setCreateStream('');
                     }}
                     required
                   >
-                    <option value="10">10</option>
+                    <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
                     <option value="11">11</option>
                     <option value="12">12</option>
                   </select>
@@ -1110,10 +1187,13 @@ export default function AdminAssessmentsPage() {
 
                 <label className={styles.field}>
                   <span className={styles.fieldLabel}>Type</span>
-                  <select className={styles.select} value={createType} onChange={(e) => setCreateType(e.target.value as 'daily_practice' | 'subject_practice' | 'scheduled')}>
-                    <option value="daily_practice">Daily Practice</option>
-                    <option value="subject_practice">Subject Practice</option>
-                    <option value="scheduled">Scheduled</option>
+                  <select
+                    className={styles.select}
+                    value={createType}
+                    onChange={(e) => setCreateType(e.target.value as CreateAssessmentType)}
+                  >
+                    <option value="practice_test">Practice Test</option>
+                    <option value="online_test">Online Test</option>
                   </select>
                 </label>
 
@@ -1220,7 +1300,7 @@ export default function AdminAssessmentsPage() {
         <>
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>Assign Test Schedule</h3>
-            <p className={styles.cardSubtle}>Choose test, audience, and schedule window. Students get test notifications automatically.</p>
+            <p className={styles.cardSubtle}>Choose test, audience, and schedule window. Students get test notifications automatically. Time is interpreted in Asia/Kolkata (IST).</p>
 
             <form onSubmit={handleAssignTest}>
               <div className={styles.formGrid}>
@@ -1352,7 +1432,7 @@ export default function AdminAssessmentsPage() {
                   {assessments.map((item) => (
                     <tr key={item.id}>
                       <td>{item.title}</td>
-                      <td>{item.assessment_type}</td>
+                      <td>{assessmentTypeLabel(item.assessment_type)}</td>
                       <td>
                         <span className={cls(styles.badge, item.status === 'published' ? styles.badgeSuccess : styles.badgeMuted)}>
                           {item.status}

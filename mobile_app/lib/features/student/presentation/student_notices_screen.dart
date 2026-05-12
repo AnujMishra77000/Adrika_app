@@ -10,102 +10,100 @@ import "widgets/student_home_states.dart";
 import "widgets/student_module_header.dart";
 import "widgets/student_notice_feed_card.dart";
 import "widgets/student_page_background.dart";
-import "widgets/student_section_header.dart";
 
 class StudentNoticesScreen extends ConsumerWidget {
-  const StudentNoticesScreen({super.key});
+  const StudentNoticesScreen({
+    super.key,
+    this.showStandaloneHeader = false,
+  });
+
+  final bool showStandaloneHeader;
 
   Future<void> _refresh(WidgetRef ref) async {
     ref.invalidate(studentNoticesProvider);
     await ref.read(studentNoticesProvider.future);
   }
 
-  List<Widget> _buildSections(
+  List<StudentNotice> _sortedNotices(List<StudentNotice> items) {
+    DateTime parsePublishAt(String? value) =>
+        DateTime.tryParse(value ?? "") ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+
+    final records = List<StudentNotice>.from(items);
+    records.sort((a, b) {
+      final byTime =
+          parsePublishAt(b.publishAt).compareTo(parsePublishAt(a.publishAt));
+      if (byTime != 0) {
+        return byTime;
+      }
+      if (a.isRead == b.isRead) {
+        return 0;
+      }
+      return a.isRead ? 1 : -1;
+    });
+    return records;
+  }
+
+  List<Widget> _buildNoticeFeed(
     BuildContext context,
     List<StudentNotice> items,
   ) {
-    final unread = items.where((item) => !item.isRead).toList(growable: false);
-    final read = items.where((item) => item.isRead).toList(growable: false);
-
-    final pinned = unread.take(1).toList(growable: false);
-    final unreadStream = unread.skip(pinned.length).toList(growable: false);
-
-    final content = <Widget>[];
-    var sequence = 0;
-
-    void addGroup({
-      required String title,
-      required String subtitle,
-      required List<StudentNotice> records,
-      bool isPinned = false,
-    }) {
-      if (records.isEmpty) {
-        return;
-      }
-
-      if (content.isNotEmpty) {
-        content.add(const SizedBox(height: StudentUiSpacing.sectionGap));
-      }
-
-      content.add(
-        StudentSectionHeader(
-          title: title,
-          subtitle: subtitle,
-          titleColor: const Color(0xFFECE8FF),
-          subtitleColor: const Color(0xFFB6B1D6),
-        ),
-      );
-      content.add(const SizedBox(height: 10));
-
-      for (final notice in records) {
-        final delay = 80 + (sequence * 40);
-        sequence += 1;
-        content.add(
-          StudentFadeSlideIn(
-            delayMs: delay,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: StudentUiSpacing.cardGap),
-              child: StudentNoticeFeedCard(
-                notice: notice,
-                pinned: isPinned,
-                onTap: () =>
-                    context.push("/student/announcements/${notice.id}"),
-              ),
+    final feed = <Widget>[];
+    for (var i = 0; i < items.length; i += 1) {
+      final notice = items[i];
+      feed.add(
+        StudentFadeSlideIn(
+          delayMs: 35 + (i * 26),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: StudentUiSpacing.cardGap),
+            child: StudentNoticeFeedCard(
+              notice: notice,
+              pinned: i == 0 && !notice.isRead,
+              onTap: () => context.push("/student/announcements/${notice.id}"),
             ),
           ),
-        );
-      }
+        ),
+      );
     }
+    return feed;
+  }
 
-    addGroup(
-      title: "Pinned Notice",
-      subtitle: "Priority communication requiring immediate attention.",
-      records: pinned,
-      isPinned: true,
+  AppBar _quickAccessAppBar() {
+    return AppBar(
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Colors.white),
+      flexibleSpace: const DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              StudentQuickAccessTheme.appBarStart,
+              StudentQuickAccessTheme.appBarEnd,
+            ],
+          ),
+        ),
+      ),
+      title: const Text(
+        "Notice Center",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
-
-    addGroup(
-      title: "Unread",
-      subtitle: "Latest institute updates not reviewed yet.",
-      records: unreadStream,
-    );
-
-    addGroup(
-      title: "Earlier Notices",
-      subtitle: "Recently reviewed communication history.",
-      records: read,
-    );
-
-    return content;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final noticesAsync = ref.watch(studentNoticesProvider);
 
-    return Stack(
+    final content = Stack(
       children: [
-        const StudentPageBackgroundLayer(),
+        const StudentQuickAccessBackgroundLayer(),
         noticesAsync.when(
           loading: () => const StudentFeedLoadingList(itemCount: 5),
           error: (error, _) => ListView(
@@ -118,33 +116,50 @@ class StudentNoticesScreen extends ConsumerWidget {
               ),
             ],
           ),
-          data: (items) => RefreshIndicator(
-            onRefresh: () => _refresh(ref),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: StudentUiSpacing.page,
-              children: [
-                const StudentModuleHeader(
-                  title: "Notice Center",
-                  subtitle:
-                      "Announcements, policy updates, and class-wide alerts from the institute.",
-                  icon: Icons.campaign_rounded,
-                  accent: StudentHomePalette.softPink,
-                ),
-                const SizedBox(height: StudentUiSpacing.sectionGap),
-                if (items.isEmpty)
-                  const StudentHomeEmptyState(
-                    title: "No notices published",
-                    subtitle:
-                        "Once faculty or admin shares new updates, you will see them here.",
-                  )
-                else
-                  ..._buildSections(context, items),
-              ],
-            ),
-          ),
+          data: (items) {
+            final sortedItems = _sortedNotices(items);
+            return RefreshIndicator(
+              onRefresh: () => _refresh(ref),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: StudentUiSpacing.page,
+                children: [
+                  if (!showStandaloneHeader)
+                    StudentFadeSlideIn(
+                      delayMs: 20,
+                      child: const StudentModuleHeader(
+                        title: "Notice Center",
+                        subtitle: "",
+                        icon: Icons.notifications_active_rounded,
+                        accent: StudentHomePalette.softPink,
+                      ),
+                    ),
+                  if (!showStandaloneHeader)
+                    const SizedBox(height: StudentUiSpacing.sectionGap),
+                  if (sortedItems.isEmpty)
+                    const StudentHomeEmptyState(
+                      title: "No notices published",
+                      subtitle:
+                          "Once faculty or admin shares new updates, you will see them here.",
+                    )
+                  else
+                    ..._buildNoticeFeed(context, sortedItems),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
+
+    if (showStandaloneHeader) {
+      return Scaffold(
+        backgroundColor: StudentQuickAccessTheme.scaffold,
+        appBar: _quickAccessAppBar(),
+        body: content,
+      );
+    }
+
+    return content;
   }
 }

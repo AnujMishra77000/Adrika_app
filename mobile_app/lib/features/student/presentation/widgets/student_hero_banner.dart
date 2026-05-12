@@ -33,124 +33,53 @@ class StudentHeroBanner extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF24153F),
-            Color(0xFF1B1D44),
-            Color(0xFF15254E),
+            const Color(0xFF102A6B).withValues(alpha: 0.68),
+            const Color(0xFF1B4895).withValues(alpha: 0.56),
+            const Color(0xFF38A7FF).withValues(alpha: 0.34),
           ],
-          stops: [0.0, 0.52, 1.0],
         ),
-        border: Border.all(color: const Color(0xFFFFE698), width: 1.6),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.28), width: 1.1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFD96A).withValues(alpha: 0.32),
-            blurRadius: 28,
-            spreadRadius: -6,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: const Color(0xFFFFF2C4).withValues(alpha: 0.22),
-            blurRadius: 10,
-            spreadRadius: -8,
-            offset: const Offset(0, -1),
+            color: const Color(0xFF102A6B).withValues(alpha: 0.34),
+            blurRadius: 22,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            Positioned(
-              left: -30,
-              top: -80,
-              child: _GlowOrb(
-                size: 220,
-                color: const Color(0xFFFFDA71).withValues(alpha: 0.34),
-              ),
-            ),
-            Positioned(
-              right: -26,
-              bottom: -62,
-              child: _GlowOrb(
-                size: 170,
-                color: const Color(0xFF5F80FF).withValues(alpha: 0.22),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: Container(
-                height: 74,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFFFFF0C1).withValues(alpha: 0.28),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: GridView.builder(
-                shrinkWrap: true,
-                itemCount: cards.length,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.45,
-                ),
-                itemBuilder: (context, index) {
-                  final card = cards[index];
-                  return _HeroQuickCard(
-                    data: card,
-                    onTap: () => onCardTap(card.route),
-                  );
-                },
-              ),
-            ),
-          ],
+      child: Padding(
+        padding: const EdgeInsets.all(7),
+        child: GridView.builder(
+          shrinkWrap: true,
+          itemCount: cards.length,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 7,
+            crossAxisSpacing: 7,
+            childAspectRatio: 1.62,
+          ),
+          itemBuilder: (context, index) {
+            final card = cards[index];
+            return _HeroFeatureCard(
+              data: card,
+              onTap: () => onCardTap(card.route),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _GlowOrb extends StatelessWidget {
-  const _GlowOrb({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color,
-            color.withValues(alpha: 0),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HeroQuickCard extends StatelessWidget {
-  const _HeroQuickCard({
+class _HeroFeatureCard extends StatelessWidget {
+  const _HeroFeatureCard({
     required this.data,
     required this.onTap,
   });
@@ -160,67 +89,95 @@ class _HeroQuickCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const gradient = <Color>[
+      Color(0xFFF2F7FF),
+      Color(0xFFE4EEFF),
+    ];
+
+    final accent = data.accent;
+    final titleColor = HSLColor.fromColor(accent).withLightness(0.34).toColor();
+
     return Material(
-      color: Colors.white.withValues(alpha: 0.04),
-      borderRadius: BorderRadius.circular(16),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-            gradient: LinearGradient(
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                data.accent.withValues(alpha: 0.20),
-                Colors.white.withValues(alpha: 0.02),
-              ],
+              colors: gradient,
             ),
+            border:
+                Border.all(color: accent.withValues(alpha: 0.82), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.30),
+                blurRadius: 14,
+                spreadRadius: -5,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.fromLTRB(7, 7, 7, 7),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Icon(data.icon, size: 18, color: data.accent),
-                    const Spacer(),
-                    const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 13,
-                      color: Color(0xFFB8B3D9),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Text(
-                  data.value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: const Color(0xFFF6F4FF),
-                        fontWeight: FontWeight.w800,
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                        color: accent.withValues(alpha: 0.75), width: 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.30),
+                        blurRadius: 9,
+                        spreadRadius: -3,
+                        offset: const Offset(0, 4),
                       ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    data.icon,
+                    size: 24,
+                    color: titleColor,
+                  ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 6),
                 Text(
                   data.title,
-                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFFE1DDFF),
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                Text(
-                  data.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFFAFAAD0),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: titleColor,
+                        shadows: [
+                          Shadow(
+                            color: accent.withValues(alpha: 0.22),
+                            blurRadius: 5,
+                            offset: const Offset(0, 1.5),
+                          ),
+                        ],
+                        fontFamily: "InstrumentSerif",
+                        fontFamilyFallback: const [
+                          "Canela",
+                          "PlayfairDisplay",
+                          "Noto Serif",
+                          "serif",
+                        ],
+                        letterSpacing: 0.35,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13.5,
+                        height: 1.0,
                       ),
                 ),
               ],

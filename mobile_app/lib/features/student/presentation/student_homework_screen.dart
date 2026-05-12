@@ -167,157 +167,88 @@ class _StudentHomeworkScreenState extends ConsumerState<StudentHomeworkScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: StudentQuickAccessTheme.surfaceAlt,
       builder: (context) {
         final submission = item.submission;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 24),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: StudentHomePalette.textPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item.description.isEmpty
-                        ? 'No additional instruction for this homework.'
-                        : item.description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: StudentHomePalette.textSecondary,
-                        ),
-                  ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      StudentStatusChip(
-                        label: 'Status: ${item.isSubmitted ? 'Submitted' : item.status}',
-                        tone: item.isSubmitted
-                            ? StudentChipTone.success
-                            : StudentChipTone.info,
-                      ),
-                      StudentStatusChip(
-                        label: 'Due: ${item.dueDate}',
-                        tone: StudentChipTone.warning,
-                      ),
-                      StudentStatusChip(
-                        label: item.isRead ? 'Viewed' : 'New',
-                        tone: item.isRead
-                            ? StudentChipTone.neutral
-                            : StudentChipTone.info,
-                      ),
-                    ],
-                  ),
-                  if (item.attachments.isNotEmpty) ...[
-                    const SizedBox(height: 16),
+        final theme = Theme.of(context);
+        return Theme(
+          data: theme.copyWith(
+            textTheme: theme.textTheme.apply(
+              bodyColor: StudentQuickAccessTheme.textPrimary,
+              displayColor: StudentQuickAccessTheme.textPrimary,
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Homework Attachments',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: StudentHomePalette.textPrimary,
+                      item.title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: StudentQuickAccessTheme.textPrimary,
                             fontWeight: FontWeight.w700,
                           ),
                     ),
                     const SizedBox(height: 8),
-                    ...item.attachments.map((attachment) {
-                      final resolvedUrl =
-                          AppEnv.resolveServerUrl(attachment.fileUrl) ??
-                              attachment.fileUrl;
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFFD7D7E8),
-                          ),
-                        ),
-                        child: ListTile(
-                          onTap: () => _openAttachment(
-                            context,
-                            fileUrl: attachment.fileUrl,
-                            fileName: attachment.fileName,
-                            contentType: attachment.contentType,
-                          ),
-                          leading: const Icon(
-                            Icons.picture_as_pdf_rounded,
-                            color: Color(0xFF5A4BA0),
-                          ),
-                          title: Text(
-                            attachment.fileName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: StudentHomePalette.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                          subtitle: Text(
-                            resolvedUrl,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  color: StudentHomePalette.textSecondary,
-                                ),
-                          ),
-                          trailing: const Icon(
-                            Icons.open_in_new_rounded,
-                            color: Color(0xFF5A4BA0),
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
-                  if (submission != null) ...[
-                    const SizedBox(height: 16),
                     Text(
-                      'Your Submission',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: StudentHomePalette.textPrimary,
-                            fontWeight: FontWeight.w700,
+                      item.description.isEmpty
+                          ? 'No additional instruction for this homework.'
+                          : item.description,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: StudentQuickAccessTheme.textSecondary,
                           ),
                     ),
-                    const SizedBox(height: 8),
-                    StudentStatusChip(
-                      label: 'Submitted: ${submission.submittedAt?.toLocal().toString() ?? '-'}',
-                      tone: submission.status.toLowerCase() == 'late'
-                          ? StudentChipTone.warning
-                          : StudentChipTone.success,
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        StudentStatusChip(
+                          label:
+                              'Status: ${item.isSubmitted ? 'Submitted' : item.status}',
+                          tone: item.isSubmitted
+                              ? StudentChipTone.success
+                              : StudentChipTone.info,
+                        ),
+                        StudentStatusChip(
+                          label: 'Due: ${item.dueDate}',
+                          tone: StudentChipTone.warning,
+                        ),
+                        StudentStatusChip(
+                          label: item.isRead ? 'Viewed' : 'New',
+                          tone: item.isRead
+                              ? StudentChipTone.neutral
+                              : StudentChipTone.info,
+                        ),
+                      ],
                     ),
-                    if ((submission.notes ?? '').trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                    if (item.attachments.isNotEmpty) ...[
+                      const SizedBox(height: 16),
                       Text(
-                        submission.notes!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: StudentHomePalette.textSecondary,
-                            ),
+                        'Homework Attachments',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: StudentQuickAccessTheme.textPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                       ),
-                    ],
-                    if (submission.attachments.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      ...submission.attachments.map((attachment) {
+                      ...item.attachments.map((attachment) {
+                        final resolvedUrl =
+                            AppEnv.resolveServerUrl(attachment.fileUrl) ??
+                                attachment.fileUrl;
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFFD7D7E8),
+                              color: StudentQuickAccessTheme.surfaceBorder,
                             ),
                           ),
                           child: ListTile(
@@ -328,40 +259,126 @@ class _StudentHomeworkScreenState extends ConsumerState<StudentHomeworkScreen> {
                               contentType: attachment.contentType,
                             ),
                             leading: const Icon(
-                              Icons.assignment_turned_in_rounded,
-                              color: Color(0xFF0F9D58),
+                              Icons.picture_as_pdf_rounded,
+                              color: Color(0xFF5A4BA0),
                             ),
                             title: Text(
                               attachment.fileName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: StudentQuickAccessTheme.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                             subtitle: Text(
-                              '${(attachment.fileSizeBytes ~/ 1024)} KB',
+                              resolvedUrl,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color:
+                                        StudentQuickAccessTheme.textSecondary,
+                                  ),
                             ),
-                            trailing: const Icon(Icons.open_in_new_rounded),
+                            trailing: const Icon(
+                              Icons.open_in_new_rounded,
+                              color: Color(0xFF5A4BA0),
+                            ),
                           ),
                         );
                       }),
                     ],
-                  ],
-                  const SizedBox(height: 12),
-                  if (!item.isSubmitted)
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _submittingHomeworkIds.contains(item.id)
-                            ? null
-                            : () => _submitHomework(item),
-                        icon: const Icon(Icons.upload_file_rounded),
-                        label: Text(_submittingHomeworkIds.contains(item.id)
-                            ? 'Submitting...'
-                            : 'Submit PDF'),
+                    if (submission != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Your Submission',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: StudentQuickAccessTheme.textPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                       ),
-                    )
-                  else
-                    const SizedBox.shrink(),
-                ],
+                      const SizedBox(height: 8),
+                      StudentStatusChip(
+                        label:
+                            'Submitted: ${submission.submittedAt?.toLocal().toString() ?? '-'}',
+                        tone: submission.status.toLowerCase() == 'late'
+                            ? StudentChipTone.warning
+                            : StudentChipTone.success,
+                      ),
+                      if ((submission.notes ?? '').trim().isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          submission.notes!,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: StudentQuickAccessTheme.textSecondary,
+                              ),
+                        ),
+                      ],
+                      if (submission.attachments.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...submission.attachments.map((attachment) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: StudentQuickAccessTheme.surfaceBorder,
+                              ),
+                            ),
+                            child: ListTile(
+                              onTap: () => _openAttachment(
+                                context,
+                                fileUrl: attachment.fileUrl,
+                                fileName: attachment.fileName,
+                                contentType: attachment.contentType,
+                              ),
+                              leading: const Icon(
+                                Icons.assignment_turned_in_rounded,
+                                color: Color(0xFF0F9D58),
+                              ),
+                              title: Text(
+                                attachment.fileName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                '${(attachment.fileSizeBytes ~/ 1024)} KB',
+                              ),
+                              trailing: const Icon(Icons.open_in_new_rounded),
+                            ),
+                          );
+                        }),
+                      ],
+                    ],
+                    const SizedBox(height: 12),
+                    if (!item.isSubmitted)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _submittingHomeworkIds.contains(item.id)
+                              ? null
+                              : () => _submitHomework(item),
+                          icon: const Icon(Icons.upload_file_rounded),
+                          label: Text(_submittingHomeworkIds.contains(item.id)
+                              ? 'Submitting...'
+                              : 'Submit PDF'),
+                        ),
+                      )
+                    else
+                      const SizedBox.shrink(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -376,7 +393,7 @@ class _StudentHomeworkScreenState extends ConsumerState<StudentHomeworkScreen> {
 
     return Stack(
       children: [
-        const StudentPageBackgroundLayer(),
+        const StudentQuickAccessBackgroundLayer(),
         homeworkAsync.when(
           loading: () => const StudentFeedLoadingList(itemCount: 5),
           error: (error, _) => ListView(
@@ -390,7 +407,8 @@ class _StudentHomeworkScreenState extends ConsumerState<StudentHomeworkScreen> {
             ],
           ),
           data: (items) {
-            final submittedCount = items.where((item) => item.isSubmitted).length;
+            final submittedCount =
+                items.where((item) => item.isSubmitted).length;
             final pendingCount = items.length - submittedCount;
 
             return RefreshIndicator(
@@ -399,18 +417,23 @@ class _StudentHomeworkScreenState extends ConsumerState<StudentHomeworkScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: StudentUiSpacing.page,
                 children: [
-                  const StudentModuleHeader(
-                    title: 'Homework Studio',
-                    subtitle:
-                        'Track assignments, submit PDF answers, and monitor completion status in one place.',
-                    icon: Icons.assignment_rounded,
-                    accent: StudentHomePalette.mintGreen,
+                  StudentFadeSlideIn(
+                    delayMs: 20,
+                    child: const StudentModuleHeader(
+                      title: 'Homework Studio',
+                      subtitle:
+                          'Track assignments, submit PDF answers, and monitor completion status in one place.',
+                      icon: Icons.assignment_rounded,
+                      accent: StudentHomePalette.mintGreen,
+                    ),
                   ),
                   const SizedBox(height: StudentUiSpacing.sectionGap),
                   Row(
                     children: [
                       Expanded(
                         child: StudentSurfaceCard(
+                          backgroundColor: StudentQuickAccessTheme.surfaceAlt,
+                          borderColor: StudentQuickAccessTheme.surfaceBorder,
                           child: _HomeworkCountTile(
                             title: 'Pending',
                             value: pendingCount.toString(),
@@ -422,6 +445,8 @@ class _StudentHomeworkScreenState extends ConsumerState<StudentHomeworkScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: StudentSurfaceCard(
+                          backgroundColor: StudentQuickAccessTheme.surfaceAlt,
+                          borderColor: StudentQuickAccessTheme.surfaceBorder,
                           child: _HomeworkCountTile(
                             title: 'Submitted',
                             value: submittedCount.toString(),
@@ -505,7 +530,7 @@ class _HomeworkCountTile extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: StudentHomePalette.textMuted,
+                      color: StudentQuickAccessTheme.textMuted,
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -513,7 +538,7 @@ class _HomeworkCountTile extends StatelessWidget {
               Text(
                 value,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: StudentHomePalette.textPrimary,
+                      color: StudentQuickAccessTheme.textPrimary,
                       fontWeight: FontWeight.w800,
                     ),
               ),

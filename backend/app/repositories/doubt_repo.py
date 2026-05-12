@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.timezone import ensure_utc
 from app.db.models.academic import (
     CompletedLecture,
     LectureSchedule,
@@ -140,17 +141,45 @@ class DoubtRepository:
         await self.session.flush()
         return doubt
 
-    async def list_messages(self, *, doubt_id: str, since: datetime | None = None) -> list[DoubtMessage]:
-        stmt = select(DoubtMessage).where(DoubtMessage.doubt_id == doubt_id)
-        if since is not None:
-            stmt = stmt.where(DoubtMessage.created_at > since)
-
+    async def list_messages(
+        self,
+        *,
+        doubt_id: str,
+        since: datetime | None = None,
+        since_id: str | None = None,
+    ) -> list[DoubtMessage]:
         rows = (
             await self.session.execute(
-                stmt.order_by(DoubtMessage.created_at.asc(), DoubtMessage.id.asc())
+                select(DoubtMessage)
+                .where(DoubtMessage.doubt_id == doubt_id)
+                .order_by(DoubtMessage.created_at.asc(), DoubtMessage.id.asc())
             )
         ).scalars().all()
-        return rows
+
+        if since is None and not since_id:
+            return rows
+
+        normalized_since = ensure_utc(since)
+        filtered: list[DoubtMessage] = []
+
+        for row in rows:
+            row_created_at = ensure_utc(row.created_at)
+            if normalized_since is None:
+                if since_id and row.id == since_id:
+                    continue
+                filtered.append(row)
+                continue
+
+            if row_created_at and row_created_at > normalized_since:
+                if since_id and row.id == since_id:
+                    continue
+                filtered.append(row)
+                continue
+
+            if row_created_at == normalized_since and since_id and row.id != since_id:
+                filtered.append(row)
+
+        return filtered
 
     @staticmethod
     def _scope_condition_for_completed_lecture(

@@ -119,7 +119,7 @@ export default function AdminAttendancePage() {
                       <option value="leave">leave</option>
                     </select>
                     <button className="btn" type="button" style={{ background: '#16a34a' }} onClick={() => decideCorrection(item.id, 'approved')}>Approve</button>
-                    <button className="btn" type="button" style={{ background: '#b91c1c' }} onClick={() => decideCorrection(item.id, 'rejected')}>Reject</button>
+                    <button className="btn" type="button" style={{ background: '#7c3aed' }} onClick={() => decideCorrection(item.id, 'rejected')}>Reject</button>
                   </div>
                 </td>
               </tr>

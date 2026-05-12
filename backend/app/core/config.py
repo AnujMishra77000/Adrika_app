@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     app_name: str = "adr-platform-backend"
     api_v1_prefix: str = "/api/v1"
     log_level: str = "INFO"
+    app_timezone: str = "Asia/Kolkata"
 
     database_url: str = Field(default="postgresql+asyncpg://postgres:postgres@localhost:5432/adr_platform")
     redis_url: str = Field(default="redis://localhost:6379/0")
@@ -21,6 +22,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 14
     jwt_algorithm: str = "HS256"
+    access_token_cookie_name: str = "adr_access_token"
 
     # NoDecode prevents pydantic-settings from forcing JSON parsing on env value.
     # This allows plain comma-separated CORS_ORIGINS in .env.
@@ -38,12 +40,14 @@ class Settings(BaseSettings):
     s3_bucket: str = ""
 
     fcm_project_id: str = ""
+    fcm_credentials_path: str = ""
     fcm_credentials_json: str = ""
 
     whatsapp_base_url: str = ""
     whatsapp_access_token: str = ""
     whatsapp_phone_number_id: str = ""
     institute_display_name: str = "Adrika Smart Institute"
+    institute_logo_path: str = ""
     fee_payment_contact_number: str = ""
     fee_payment_upi_id: str = ""
 

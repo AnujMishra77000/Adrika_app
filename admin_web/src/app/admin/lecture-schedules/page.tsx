@@ -25,6 +25,8 @@ type Teacher = {
   full_name: string;
   phone: string | null;
   assignment_count: number;
+  status: string;
+  teaching_scope: string | null;
 };
 
 type Student = {
@@ -148,6 +150,23 @@ function classLabel(classLevel: number, stream: string): string {
   return `${classLevel}th ${stream === 'science' ? 'Science' : 'Commerce'}`;
 }
 
+function formatTeachingScope(value: string | null): string {
+  if (!value) return 'Not set';
+  const labelMap: Record<string, string> = {
+    '10-common': '10th',
+    '11-science': '11th Science',
+    '11-commerce': '11th Commerce',
+    '12-science': '12th Science',
+    '12-commerce': '12th Commerce',
+  };
+  const parts = value
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+    .map((item) => labelMap[item] ?? item);
+  return parts.length > 0 ? parts.join(', ') : value;
+}
+
 function statusBadgeClass(status: ScheduleStatus): string {
   if (status === 'done') return `${styles.badge} ${styles.badgeDone}`;
   if (status === 'canceled') return `${styles.badge} ${styles.badgeCanceled}`;
@@ -181,7 +200,7 @@ export default function AdminLectureSchedulesPage() {
     value.setMinutes(value.getMinutes() + 30);
     return toInputDateTime(value);
   });
-  const [audienceMode, setAudienceMode] = useState<'all' | 'selected'>('all');
+  const [audienceMode, setAudienceMode] = useState<'all' | 'selected'>('selected');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [studentSearch, setStudentSearch] = useState('');
 
@@ -276,12 +295,18 @@ export default function AdminLectureSchedulesPage() {
     setFilterTeachers(response.items ?? []);
   }
 
-  async function loadCandidateUsers(options?: { preserveTeacher?: boolean }) {
+  async function loadCreateTeachers() {
+    const response = await apiRequest<{ items: Teacher[] }>('/api/v1/admin/teachers?status=active&limit=100&offset=0');
+    const items = response.items ?? [];
+    setTeachers(items);
+    setFormTeacherId((prev) => (items.some((item) => item.teacher_id === prev) ? prev : (items[0]?.teacher_id ?? '')));
+  }
+
+  async function loadCandidateUsers() {
     const classLevel = Number(formClassLevel);
     const stream = streamRequired(classLevel) ? formStream : '';
 
     if (streamRequired(classLevel) && !stream) {
-      setTeachers([]);
       setStudents([]);
       setSelectedStudentIds([]);
       return;
@@ -289,19 +314,6 @@ export default function AdminLectureSchedulesPage() {
 
     setLoadingCandidates(true);
     try {
-      const teacherParams = new URLSearchParams({
-        class_level: String(classLevel),
-        limit: '100',
-        offset: '0',
-        status: 'active',
-      });
-      if (stream) {
-        teacherParams.set('stream', stream);
-      }
-      if (formSubjectId) {
-        teacherParams.set('subject_id', formSubjectId);
-      }
-
       const studentParams = new URLSearchParams({
         class_level: String(classLevel),
         status: 'active',
@@ -312,27 +324,11 @@ export default function AdminLectureSchedulesPage() {
         studentParams.set('stream', stream);
       }
 
-      const [teachersRes, studentsRes] = await Promise.all([
-        apiRequest<{ items: Teacher[] }>(`/api/v1/admin/teachers?${teacherParams.toString()}`),
-        apiRequest<{ items: Student[] }>(`/api/v1/admin/students?${studentParams.toString()}`),
-      ]);
-
-      setTeachers(teachersRes.items);
-      setStudents(studentsRes.items);
-
-      if (!options?.preserveTeacher) {
-        if (teachersRes.items.length > 0) {
-          const first = teachersRes.items[0].teacher_id;
-          setFormTeacherId((prev) => (teachersRes.items.some((item) => item.teacher_id === prev) ? prev : first));
-        } else {
-          setFormTeacherId('');
-        }
-      } else if (!teachersRes.items.some((item) => item.teacher_id === formTeacherId)) {
-        setFormTeacherId(teachersRes.items[0]?.teacher_id ?? '');
-      }
-
+      const studentsRes = await apiRequest<{ items: Student[] }>(`/api/v1/admin/students?${studentParams.toString()}`);
+      const scopedStudents = studentsRes.items ?? [];
+      setStudents(scopedStudents);
       setSelectedStudentIds((current) =>
-        current.filter((studentId) => studentsRes.items.some((item) => item.student_id === studentId)),
+        current.filter((studentId) => scopedStudents.some((item) => item.student_id === studentId)),
       );
     } finally {
       setLoadingCandidates(false);
@@ -388,7 +384,7 @@ export default function AdminLectureSchedulesPage() {
           setFormSubjectId(matching.id);
         }
       }
-      await loadFilterTeachers();
+      await Promise.all([loadFilterTeachers(), loadCreateTeachers()]);
       await loadSchedules();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load lecture schedule module');
@@ -404,19 +400,17 @@ export default function AdminLectureSchedulesPage() {
 
   useEffect(() => {
     if (streamRequired(classLevelValue) && !formStream) {
-      setTeachers([]);
       setStudents([]);
-      setFormTeacherId('');
       setSelectedStudentIds([]);
       return;
     }
 
-    void loadCandidateUsers({ preserveTeacher: true }).catch((err) => {
-      setError(err instanceof Error ? err.message : 'Failed to load teacher/student candidates');
+    void loadCandidateUsers().catch((err) => {
+      setError(err instanceof Error ? err.message : 'Failed to load students for selected class/stream');
       setLoadingCandidates(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formClassLevel, formStream, formSubjectId]);
+  }, [formClassLevel, formStream]);
 
   useEffect(() => {
     if (!scopedSubjects.some((item) => item.id === formSubjectId)) {
@@ -486,7 +480,7 @@ export default function AdminLectureSchedulesPage() {
       setSuccess('Lecture scheduled successfully. Students and teachers will now see this in their upcoming lectures.');
       setFormTopic('');
       setFormLectureNotes('');
-      setAudienceMode('all');
+      setAudienceMode('selected');
       setSelectedStudentIds([]);
       await loadSchedules();
     } catch (err) {
@@ -631,10 +625,11 @@ export default function AdminLectureSchedulesPage() {
                   <option value="">Select teacher</option>
                   {teachers.map((teacher) => (
                     <option key={teacher.teacher_id} value={teacher.teacher_id}>
-                      {teacher.full_name} ({teacher.assignment_count} assignments)
+                      {teacher.full_name} • {formatTeachingScope(teacher.teaching_scope)}
                     </option>
                   ))}
                 </select>
+                <span className={styles.muted}>Showing all active registered teachers.</span>
               </label>
 
               <label className={`${styles.field} ${styles.fieldFull}`}>
@@ -739,7 +734,7 @@ export default function AdminLectureSchedulesPage() {
                 onClick={() => {
                   setFormTopic('');
                   setFormLectureNotes('');
-                  setAudienceMode('all');
+                  setAudienceMode('selected');
                   setSelectedStudentIds([]);
                 }}
               >
@@ -750,7 +745,7 @@ export default function AdminLectureSchedulesPage() {
         </article>
 
         <article className={styles.card}>
-          <h2 className={styles.cardTitle}>Filter Lecture Schedules</h2>
+          <h2 className={styles.cardTitle}>Lecture Tracker</h2>
           <div className={styles.formGrid}>
             <label className={styles.field}>
               <span className={styles.fieldLabel}>Class</span>

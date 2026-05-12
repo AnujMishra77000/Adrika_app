@@ -30,13 +30,10 @@ class HomeworkService:
     @staticmethod
     def _extract_class_level(class_name: str | None) -> str | None:
         text = (class_name or "").strip()
-        if "10" in text:
-            return "10"
-        if "11" in text:
-            return "11"
-        if "12" in text:
-            return "12"
-        return None
+        match = re.search(r"(6|7|8|9|10|11|12)", text)
+        if not match:
+            return None
+        return match.group(1)
 
     @staticmethod
     def _normalize_stream(stream: str | None) -> str | None:

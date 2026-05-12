@@ -20,6 +20,7 @@ from app.schemas.admin import (
     AdminBannerCreateDTO,
     AdminBannerUpdateDTO,
     AdminBatchCreateDTO,
+    AdminStandardCreateDTO,
     AdminDailyThoughtUpsertDTO,
     AdminDoubtUpdateDTO,
     AdminHomeworkCreateDTO,
@@ -28,17 +29,26 @@ from app.schemas.admin import (
     AdminResultPublishDTO,
     AdminResultWhatsappDTO,
     AdminSubjectCreateDTO,
+    AdminSubjectEstimateUpsertDTO,
     AdminStudentCreateDTO,
+    AdminStudentEnquiryCreateDTO,
+    AdminStudentEnquiryUpdateDTO,
     AdminStudentUpdateDTO,
     AdminParentLinkCreateDTO,
     AdminStudentStatusUpdateDTO,
+    AdminTeacherCreateDTO,
+    AdminTeacherCredentialResetDTO,
+    AdminTeacherStatusUpdateDTO,
+    AdminStudentCredentialResetDTO,
     AdminFeeStructureCreateDTO,
     AdminFeeStructureUpdateDTO,
     AdminStudentFeePaymentCreateDTO,
     AdminStudentFeeReceiptWhatsappDTO,
+    AdminFeeOverdueReminderDTO,
     AdminStudentFeeStructureAssignDTO,
 )
 from app.schemas.registration import AdminRegistrationDecisionDTO
+from app.schemas.suggestion import SuggestionMessageCreateDTO
 from app.schemas.lecture_schedule import AdminLectureScheduleCreateDTO, AdminLectureScheduleStatusUpdateDTO
 from app.services.admin_assessment_service import AdminAssessmentService
 from app.services.admin_homework_service import AdminHomeworkService
@@ -47,6 +57,7 @@ from app.services.admin_service import AdminService
 from app.services.lecture_schedule_service import LectureScheduleService
 from app.services.notification_service import NotificationService
 from app.services.registration_review_service import RegistrationReviewService
+from app.services.suggestion_service import SuggestionService
 from app.utils.pagination import build_meta
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_roles("admin"))])
@@ -62,7 +73,7 @@ def _client_ip(request: Request) -> str | None:
 async def list_students(
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
-    class_level: int | None = Query(default=None, ge=10, le=12),
+    class_level: int | None = Query(default=None, ge=6, le=12),
     stream: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -79,11 +90,173 @@ async def list_students(
     return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
 
 
+@router.get("/students/credentials")
+async def list_student_credentials(
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    class_level: int | None = Query(default=None, ge=0, le=12),
+    stream: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await AdminService(session).list_student_credentials(
+        search=search,
+        status=status,
+        class_level=class_level,
+        stream=stream,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
 @router.get("/students/summary")
 async def student_summary(
     session: AsyncSession = Depends(get_db_session),
 ) -> dict:
     return await AdminService(session).student_summary()
+
+
+@router.get("/students/enquiries")
+async def list_student_enquiries(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await AdminService(session).list_student_enquiries(limit=limit, offset=offset)
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.get("/enquiries")
+async def list_enquiries(
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    class_level: int | None = Query(default=None, ge=6, le=12),
+    fee_class_level: int | None = Query(default=None, ge=6, le=12),
+    fee_stream: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await AdminService(session).list_admin_enquiries(
+        search=search,
+        status=status,
+        class_level=class_level,
+        fee_class_level=fee_class_level,
+        fee_stream=fee_stream,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.post("/enquiries")
+async def create_enquiry(
+    payload: AdminStudentEnquiryCreateDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await AdminService(session).create_admin_enquiry(
+        payload=payload,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
+@router.patch("/enquiries/{enquiry_id}")
+async def update_enquiry(
+    enquiry_id: str,
+    payload: AdminStudentEnquiryUpdateDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await AdminService(session).update_admin_enquiry(
+        enquiry_id=enquiry_id,
+        payload=payload,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
+@router.get("/enquiries/{enquiry_id}/timeline")
+async def get_enquiry_timeline(
+    enquiry_id: str,
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await AdminService(session).list_enquiry_timeline(
+        enquiry_id=enquiry_id,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.get("/students/details")
+async def list_student_details(
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    class_level: int | None = Query(default=None, ge=6, le=12),
+    stream: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await AdminService(session).list_student_details(
+        search=search,
+        status=status,
+        class_level=class_level,
+        stream=stream,
+        student_id=None,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.get("/students/{student_id}/report-card")
+async def get_student_report_card(
+    student_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await AdminService(session).get_student_report_card(student_id=student_id)
+
+
+@router.get("/students/{student_id}/full-profile")
+async def get_student_full_profile(
+    student_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await AdminService(session).get_student_full_profile(student_id=student_id)
+
+
+@router.get("/students/{student_id}/full-profile/export")
+async def export_student_full_profile(
+    student_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await AdminService(session).export_student_full_profile_pdf(student_id=student_id)
+
+
+@router.post("/students/{student_id}/report-card/whatsapp")
+async def send_student_report_card_whatsapp(
+    student_id: str,
+    payload: AdminResultWhatsappDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await AdminService(session).send_student_report_card_whatsapp(
+        student_id=student_id,
+        phone=payload.phone,
+        custom_message=payload.message,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
 
 
 @router.patch("/students/{user_id}/status")
@@ -111,6 +284,22 @@ async def create_student(
 ) -> dict:
     return await AdminService(session).create_student(
         payload=payload,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
+@router.post("/students/{student_id}/credentials/reset")
+async def reset_student_credentials(
+    student_id: str,
+    payload: AdminStudentCredentialResetDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await AdminService(session).reset_student_credentials(
+        student_id=student_id,
+        new_password=payload.new_password,
         actor_user_id=current_user.id,
         ip_address=_client_ip(request),
     )
@@ -176,6 +365,22 @@ async def list_standards(
     return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
 
 
+
+
+@router.post("/standards")
+async def create_standard(
+    payload: AdminStandardCreateDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await AdminService(session).create_standard(
+        payload=payload,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
 @router.get("/batches")
 async def list_batches(
     limit: int = Query(default=50, ge=1, le=200),
@@ -203,7 +408,7 @@ async def create_batch(
 @router.get("/subjects")
 async def list_subjects(
     search: str | None = Query(default=None),
-    class_level: int | None = Query(default=None, ge=10, le=12),
+    class_level: int | None = Query(default=None, ge=6, le=12),
     stream: str | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=300),
     offset: int = Query(default=0, ge=0),
@@ -233,10 +438,33 @@ async def create_subject(
     )
 
 
+@router.post("/subjects/{subject_id}/estimated-hours")
+async def upsert_subject_estimated_hours(
+    subject_id: str,
+    payload: AdminSubjectEstimateUpsertDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await AdminService(session).upsert_subject_estimated_hours(
+        subject_id=subject_id,
+        payload=payload,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
+@router.get("/syllabus/completion")
+async def syllabus_completion_report(
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await AdminService(session).syllabus_completion_report()
+
+
 @router.get("/teachers")
 async def list_teachers(
     search: str | None = Query(default=None),
-    class_level: int | None = Query(default=None, ge=10, le=12),
+    class_level: int | None = Query(default=None, ge=6, le=12),
     stream: str | None = Query(default=None),
     subject_id: str | None = Query(default=None),
     status: str | None = Query(default=None),
@@ -256,9 +484,127 @@ async def list_teachers(
     return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
 
 
+@router.post("/teachers")
+async def create_teacher(
+    payload: AdminTeacherCreateDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await LectureScheduleService(session).create_admin_teacher(
+        payload=payload,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
+@router.get("/teachers/credentials")
+async def list_teacher_credentials(
+    search: str | None = Query(default=None),
+    class_level: int | None = Query(default=None, ge=6, le=12),
+    stream: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await LectureScheduleService(session).list_teacher_credentials(
+        search=search,
+        class_level=class_level,
+        stream=stream,
+        status=status,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.patch("/teachers/{teacher_id}/status")
+async def update_teacher_status(
+    teacher_id: str,
+    payload: AdminTeacherStatusUpdateDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await LectureScheduleService(session).update_admin_teacher_status(
+        teacher_id=teacher_id,
+        status=payload.status,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
+@router.post("/teachers/{teacher_id}/credentials/reset")
+async def reset_teacher_credentials(
+    teacher_id: str,
+    payload: AdminTeacherCredentialResetDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await LectureScheduleService(session).reset_teacher_credentials(
+        teacher_id=teacher_id,
+        new_password=payload.new_password,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
+@router.get("/teachers/salary-ledger")
+async def list_teacher_salary_ledger(
+    teacher_id: str | None = Query(default=None),
+    class_level: int | None = Query(default=None, ge=6, le=12),
+    stream: str | None = Query(default=None),
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total, summary = await LectureScheduleService(session).list_teacher_salary_ledger(
+        teacher_id=teacher_id,
+        class_level=class_level,
+        stream=stream,
+        from_date=from_date,
+        to_date=to_date,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "summary": summary, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.get("/teachers/{teacher_id}/salary-slip")
+async def get_teacher_salary_slip(
+    teacher_id: str,
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await LectureScheduleService(session).get_teacher_salary_slip(
+        teacher_id=teacher_id,
+        from_date=from_date,
+        to_date=to_date,
+    )
+
+
+@router.delete("/teachers/{teacher_id}")
+async def delete_teacher(
+    teacher_id: str,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await LectureScheduleService(session).delete_admin_teacher(
+        teacher_id=teacher_id,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
+
+
 @router.get("/lecture-schedules")
 async def list_lecture_schedules(
-    class_level: int | None = Query(default=None, ge=10, le=12),
+    class_level: int | None = Query(default=None, ge=6, le=12),
     stream: str | None = Query(default=None),
     subject_id: str | None = Query(default=None),
     teacher_id: str | None = Query(default=None),
@@ -283,6 +629,18 @@ async def list_lecture_schedules(
         offset=offset,
     )
     return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.get("/activity-tracker/daily")
+async def get_daily_activity_tracker(
+    day: date,
+    search: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await AdminService(session).get_daily_activity_tracker(
+        day=day,
+        search=search,
+    )
 
 
 @router.post("/lecture-schedules")
@@ -423,7 +781,7 @@ async def publish_homework(
 @router.get("/homework/completions")
 async def list_homework_completions(
     homework_id: str | None = Query(default=None),
-    class_level: int | None = Query(default=None, ge=10, le=12),
+    class_level: int | None = Query(default=None, ge=6, le=12),
     stream: str | None = Query(default=None),
     search: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
@@ -567,7 +925,7 @@ async def publish_assessment(
 
 @router.get("/assessments/question-bank")
 async def list_saved_test_questions(
-    class_level: int | None = Query(default=None, ge=10, le=12),
+    class_level: int | None = Query(default=None, ge=6, le=12),
     stream: str | None = Query(default=None),
     subject_id: str | None = Query(default=None),
     topic: str | None = Query(default=None),
@@ -675,7 +1033,7 @@ async def list_test_questions(
 
 @router.get("/results/topics")
 async def list_result_topics(
-    class_level: int = Query(..., ge=10, le=12),
+    class_level: int = Query(..., ge=6, le=12),
     stream: str | None = Query(default=None),
     subject_id: str | None = Query(default=None),
     search: str | None = Query(default=None),
@@ -806,15 +1164,90 @@ async def update_doubt(
     )
 
 
-@router.get("/banners")
-async def list_banners(
-    active_on: date | None = Query(default=None),
+@router.get("/suggestions/unread-count")
+async def suggestion_unread_count(
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await SuggestionService(session).admin_unread_count()
+
+
+@router.get("/suggestions/threads")
+async def list_suggestion_threads(
+    search: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     session: AsyncSession = Depends(get_db_session),
 ) -> dict:
-    items, total = await AdminService(session).list_banners(active_on=active_on, limit=limit, offset=offset)
+    items, total = await SuggestionService(session).admin_list_threads(
+        search=search,
+        limit=limit,
+        offset=offset,
+    )
     return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.get("/suggestions/threads/{thread_id}/messages")
+async def get_suggestion_thread_messages(
+    thread_id: str,
+    limit: int = Query(default=300, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    payload = await SuggestionService(session).admin_get_thread_messages(
+        thread_id=thread_id,
+        limit=limit,
+        offset=offset,
+    )
+    return {
+        "thread": payload["thread"],
+        "items": payload["items"],
+        "meta": build_meta(total=payload["total"], limit=limit, offset=offset),
+    }
+
+
+@router.post("/suggestions/threads/{thread_id}/messages")
+async def admin_send_suggestion_message(
+    thread_id: str,
+    payload: SuggestionMessageCreateDTO,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await SuggestionService(session).admin_send_message(
+        thread_id=thread_id,
+        admin_user_id=current_user.id,
+        message=payload.message,
+    )
+
+
+@router.get("/banners")
+async def list_banners(
+    active_on: date | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await AdminService(session).list_banners(
+        active_on=active_on,
+        is_active=is_active,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.post("/banners/upload")
+async def upload_banner_image(
+    request: Request,
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await AdminService(session).upload_banner_image(
+        file=file,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
+    )
 
 
 @router.post("/banners")
@@ -892,13 +1325,55 @@ async def create_notification(
     payload: AdminNotificationCreateDTO,
     request: Request,
     session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
     current_user=Depends(get_current_user),
 ) -> dict:
-    return await AdminService(session).create_notification(
-        payload=payload,
+    return await NotificationService(session, cache).send_to_targets(
+        title=payload.title,
+        body=payload.body,
+        notification_type=payload.notification_type,
+        targets=[target.model_dump() for target in payload.targets],
+        metadata={
+            "source": payload.notification_type,
+            "attachments": [item.model_dump() for item in payload.attachments],
+        },
         actor_user_id=current_user.id,
-        ip_address=_client_ip(request),
+        audit_action="admin.notification.create",
+        audit_ip_address=_client_ip(request),
     )
+
+
+@router.post("/notifications/attachments")
+async def upload_notification_attachment(
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    current_user=Depends(get_current_user),
+) -> dict:
+    _ = current_user
+    _ = cache
+    return await NotificationService(session, cache).upload_attachment(file=file)
+
+
+@router.get("/notifications/history")
+async def list_notification_history(
+    title: str | None = Query(default=None),
+    on_date: date | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+    cache: Redis = Depends(get_redis),
+    current_user=Depends(get_current_user),
+) -> dict:
+    _ = current_user
+    service = NotificationService(session, cache)
+    items, total = await service.list_broadcast_history(
+        limit=limit,
+        offset=offset,
+        title_query=title,
+        on_date=on_date,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
 
 
 @router.get("/me/notifications")
@@ -1002,9 +1477,18 @@ async def fee_summary(
     return await AdminService(session).fee_summary()
 
 
+@router.get("/fees/monthly-analytics")
+async def fee_monthly_analytics(
+    months: int = Query(default=12, ge=3, le=24),
+    month: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}$"),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    return await AdminService(session).fee_monthly_analytics(months=months, month=month)
+
+
 @router.get("/fees/structures")
 async def list_fee_structures(
-    class_level: int | None = Query(default=None, ge=10, le=12),
+    class_level: int | None = Query(default=None, ge=6, le=12),
     stream: str | None = Query(default=None),
     is_active: bool | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
@@ -1069,7 +1553,7 @@ async def delete_fee_structure(
 async def list_fee_students(
     view: str = Query(default="all", pattern="^(all|pending|paid)$"),
     search: str | None = Query(default=None),
-    class_level: int | None = Query(default=None, ge=10, le=12),
+    class_level: int | None = Query(default=None, ge=6, le=12),
     stream: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -1155,6 +1639,39 @@ async def send_student_fee_receipt_whatsapp(
         ip_address=_client_ip(request),
         phone_override=payload.phone,
         custom_message=payload.message,
+    )
+
+
+@router.get("/fees/overdue")
+async def list_fee_overdue_students(
+    search: str | None = Query(default=None),
+    class_level: int | None = Query(default=None, ge=6, le=12),
+    stream: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    items, total = await AdminService(session).list_fee_overdue_students(
+        search=search,
+        class_level=class_level,
+        stream=stream,
+        limit=limit,
+        offset=offset,
+    )
+    return {"items": items, "meta": build_meta(total=total, limit=limit, offset=offset)}
+
+
+@router.post("/fees/reminders/overdue")
+async def send_fee_overdue_reminders(
+    payload: AdminFeeOverdueReminderDTO,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    current_user=Depends(get_current_user),
+) -> dict:
+    return await AdminService(session).send_fee_overdue_reminders(
+        payload=payload,
+        actor_user_id=current_user.id,
+        ip_address=_client_ip(request),
     )
 
 

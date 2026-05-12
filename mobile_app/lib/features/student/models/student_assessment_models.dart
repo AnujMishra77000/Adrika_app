@@ -17,12 +17,13 @@ bool _toBool(dynamic value, {bool fallback = false}) {
 
 DateTime? _toDate(dynamic value) {
   if (value is DateTime) {
-    return value;
+    return value.toLocal();
   }
   if (value == null) {
     return null;
   }
-  return DateTime.tryParse(value.toString())?.toLocal();
+  final parsed = DateTime.tryParse(value.toString());
+  return parsed?.toLocal();
 }
 
 String _toStringValue(dynamic value, {String fallback = ''}) {
